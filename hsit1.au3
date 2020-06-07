@@ -7,11 +7,7 @@
 Local Const $iInactive = 1000 * 30
 ;~ #################################
 
-;~ #################################
-;~ Editable temps avant capture: 1000 * 10 = 10 seconds
 Local Const $iBeforeRunning = 1000 * 10
-;~ #################################
-
 Local Const $iWait = 150
 Local Const $sBinary = @ProgramFilesDir & "\Bandicam\bdcam.exe"
 Local Const $sStartScript = $sBinary & " /record"
@@ -58,14 +54,17 @@ Func StopScript()
 	Run($sStopScript)
 EndFunc   ;==>StopScript
 
-If Not ProcessExists("bdcam.exe") Then
-	Local $iPID = Run($sBinary & " /nosplash", "", @SW_MINIMIZE)
-
-	If @error <> 0 Then
-		MsgBox($MB_SYSTEMMODAL, "", "bdcam.exe is not running")
-		Exit 1
+Func RunBandyCam()
+	ConsoleWrite(1)
+	If Not ProcessExists("bdcam.exe") Then
+		$bIsRunning = False
+		$hTimer = Null
+		Run($sBinary & " /nosplash")
 	EndIf
-EndIf
+	ConsoleWrite(2)
+EndFunc   ;==>RunBandyCam
+
+RunBandyCam()
 
 Sleep($iBeforeRunning)
 
@@ -116,6 +115,8 @@ Func MustQuitScript()
 	Return $fDiff > $iInactive
 EndFunc   ;==>MustQuitScript
 
+Local $iCpt = 0
+
 While True
 	Sleep($iWait)
 
@@ -126,9 +127,15 @@ While True
 	ElseIf MustQuitScript() Then
 		StopScript()
 	EndIf
+
+	$iCpt = $iCpt + 1
+
+	If $iCpt >= 20 Then
+		$iCpt = 0
+		RunBandyCam()
+	EndIf
 WEnd
 
 DllClose($bUser32)
 
 Exit
-
