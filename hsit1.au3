@@ -1,23 +1,47 @@
 #RequireAdmin
 #include <MsgBoxConstants.au3>
+#include <WinAPIProc.au3>
 
-Local Const $iWait = 100
-Local Const $iInactive = 30000
+;~ #################################
+;~ Editable temps avant fin enregistrement: 1000 * 30 = 30 seconds
+Local Const $iInactive = 1000 * 30
+;~ #################################
+
+;~ #################################
+;~ Editable temps avant capture: 1000 * 10 = 10 seconds
+Local Const $iBeforeRunning = 1000 * 10
+;~ #################################
+
+Local Const $iWait = 150
 Local Const $sBinary = @ProgramFilesDir & "\Bandicam\bdcam.exe"
 Local Const $sStartScript = $sBinary & " /record"
 Local Const $sStopScript = $sBinary & " /stop"
+Local Const $TOOL_NAME = "WsssM"
+Local Const $ERROR_ALREADY_EXISTS = 183
+Local Const $ERROR_ACCESS_DENIED = 5
 Local $bIsRunning = False
 Local $iMouseX = Null
 Local $iMouseY = Null
 Local $bUser32 = Null
 Local $hTimer = Null
 
+Func IsInstanceRunning()
+	Local $iErrorCode = 0 ;
+	_WinAPI_CreateMutex($TOOL_NAME & "_MUTEX", True, 0)
+	$iErrorCode = _WinAPI_GetLastError()
+	Return $iErrorCode == $ERROR_ALREADY_EXISTS Or $iErrorCode == $ERROR_ACCESS_DENIED
+EndFunc   ;==>IsInstanceRunning
+
+If (IsInstanceRunning()) Then
+	ConsoleWrite("Already in running")
+	Exit
+EndIf
+
 Func RunScript()
 	$hTimer = Null
 
-	If $bIsRunning = True Then
-		Return
-	EndIf
+	If $bIsRunning = True Then _
+			Return
 
 	$bIsRunning = True
 
@@ -25,9 +49,8 @@ Func RunScript()
 EndFunc   ;==>RunScript
 
 Func StopScript()
-	If $bIsRunning = False Then
-		Return
-	EndIf
+	If $bIsRunning = False Then _
+			Return
 
 	$bIsRunning = False
 	$hTimer = Null
@@ -36,14 +59,15 @@ Func StopScript()
 EndFunc   ;==>StopScript
 
 If Not ProcessExists("bdcam.exe") Then
-	Local $iPID = Run($sBinary & " /nosplash", "", @SW_HIDE)
+	Local $iPID = Run($sBinary & " /nosplash", "", @SW_MINIMIZE)
+
 	If @error <> 0 Then
 		MsgBox($MB_SYSTEMMODAL, "", "bdcam.exe is not running")
 		Exit 1
 	EndIf
 EndIf
 
-Sleep(10000)
+Sleep($iBeforeRunning)
 
 Func UserIsActive()
 	If $bUser32 = Null Then
@@ -53,35 +77,25 @@ Func UserIsActive()
 	Local $bIsActive = False
 	Local $aMousePos = MouseGetPos()
 
-	If $aMousePos[0] <> $iMouseX Then
-		If $iMouseX <> Null Then
-			$bIsActive = True
-		EndIf
-	EndIf
-
-	If $aMousePos[1] <> $iMouseY Then
-		If $iMouseY <> Null Then
-			$bIsActive = True
-		EndIf
+	If $aMousePos[0] <> $iMouseX _
+			Or $aMousePos[1] <> $iMouseY Then
+		$bIsActive = True
 	EndIf
 
 	$iMouseX = $aMousePos[0]
 	$iMouseY = $aMousePos[1]
 
-	If $bIsActive Then
-		Return True
-	EndIf
+	If $bIsActive Then _
+			Return True
 
 	For $i = 1 To 94
 		Local $aReturn = DllCall($bUser32, "short", "GetAsyncKeyState", "int", "0x" & Hex($i))
 
-		If @error <> 0 Then
-			ContinueLoop
-		EndIf
+		If @error <> 0 Then _
+				ContinueLoop
 
-		If BitAND($aReturn[0], 0x8000) <> 0 Then
-			Return True
-		EndIf
+		If BitAND($aReturn[0], 0x8000) <> 0 Then _
+				Return True
 	Next
 
 	Return False
