@@ -1,17 +1,16 @@
 #RequireAdmin
 #include <MsgBoxConstants.au3>
 #include <WinAPIProc.au3>
+#include <File.au3>
 
-;~ #################################
-;~ Editable temps avant fin enregistrement: 1000 * 30 = 30 seconds
-Local Const $iInactive = 1000 * 30
-;~ #################################
-
+Local Const $iInactive = 1000 * 30 ;~ Edit time end recording: 1000 * 30 = 30 seconds
 Local Const $iBeforeRunning = 1000 * 10
 Local Const $iWait = 150
 Local Const $sBinary = @ProgramFilesDir & "\Bandicam\bdcam.exe"
+Local Const $sRecordLocation = @MyDocumentsDir & "\Bandicam"
 Local Const $sStartScript = $sBinary & " /record"
 Local Const $sStopScript = $sBinary & " /stop"
+Local Const $sRunScript = $sBinary & " /nosplash"
 Local Const $TOOL_NAME = "WsssM"
 Local Const $ERROR_ALREADY_EXISTS = 183
 Local Const $ERROR_ACCESS_DENIED = 5
@@ -35,34 +34,36 @@ EndIf
 
 Func RunScript()
 	$hTimer = Null
-
-	If $bIsRunning = True Then _
-			Return
-
+	If $bIsRunning = True Then Return
 	$bIsRunning = True
-
 	Run($sStartScript)
 EndFunc   ;==>RunScript
 
 Func StopScript()
-	If $bIsRunning = False Then _
-			Return
-
+	If $bIsRunning = False Then Return
 	$bIsRunning = False
 	$hTimer = Null
-
 	Run($sStopScript)
 EndFunc   ;==>StopScript
 
 Func RunBandyCam()
-	ConsoleWrite(1)
 	If Not ProcessExists("bdcam.exe") Then
+		Run($sRunScript)
+		Sleep(2000)
 		$bIsRunning = False
 		$hTimer = Null
-		Run($sBinary & " /nosplash")
 	EndIf
-	ConsoleWrite(2)
 EndFunc   ;==>RunBandyCam
+
+Func BandyCamStatus()
+	RunBandyCam()
+	If $bIsRunning = False Then Return
+	Local $aFileList = _FileListToArray($sRecordLocation, "*.bfix", $FLTA_FILES)
+	If @error = 4 And $bIsRunning Then
+		$bIsRunning = False
+		RunScript()
+	EndIf
+EndFunc   ;==>BandyCamStatus
 
 RunBandyCam()
 
@@ -89,12 +90,8 @@ Func UserIsActive()
 
 	For $i = 1 To 94
 		Local $aReturn = DllCall($bUser32, "short", "GetAsyncKeyState", "int", "0x" & Hex($i))
-
-		If @error <> 0 Then _
-				ContinueLoop
-
-		If BitAND($aReturn[0], 0x8000) <> 0 Then _
-				Return True
+		If @error <> 0 Then ContinueLoop
+		If BitAND($aReturn[0], 0x8000) <> 0 Then Return True
 	Next
 
 	Return False
@@ -120,9 +117,7 @@ Local $iCpt = 0
 While True
 	Sleep($iWait)
 
-	Local $userIsActive = UserIsActive()
-
-	If $userIsActive Then
+	If UserIsActive() Then
 		RunScript()
 	ElseIf MustQuitScript() Then
 		StopScript()
@@ -132,7 +127,7 @@ While True
 
 	If $iCpt >= 20 Then
 		$iCpt = 0
-		RunBandyCam()
+		BandyCamStatus()
 	EndIf
 WEnd
 
