@@ -1,17 +1,20 @@
 #RequireAdmin
 #include <MsgBoxConstants.au3>
 #include <WinAPIProc.au3>
-#include <File.au3>
+#include <Misc.au3>
+
+OnAutoItExitRegister("OnExit")
+AutoItSetOption("MustDeclareVars", 1)
 
 Local Const $iInactive = 1000 * 30 ;~ Edit time end recording: 1000 * 30 = 30 seconds
 Local Const $iBeforeRunning = 1000 * 10
-Local Const $iWait = 150
+Local Const $iWait = 100
 Local Const $sBinary = @ProgramFilesDir & "\Bandicam\bdcam.exe"
-Local Const $sRecordLocation = @MyDocumentsDir & "\Bandicam"
 Local Const $sStartScript = $sBinary & " /record"
 Local Const $sStopScript = $sBinary & " /stop"
 Local Const $sRunScript = $sBinary & " /nosplash"
 Local Const $TOOL_NAME = "WsssM"
+Local Const $sBandicanTitle = "[REGEXPTITLE:(?i).*bandicam*]"
 Local Const $ERROR_ALREADY_EXISTS = 183
 Local Const $ERROR_ACCESS_DENIED = 5
 Local $bIsRunning = False
@@ -20,6 +23,12 @@ Local $iMouseY = Null
 Local $bUser32 = Null
 Local $hTimer = Null
 
+Func OnExit()
+	If $bUser32 <> Null Then
+		DllClose($bUser32)
+	EndIf
+EndFunc   ;==>OnExit
+
 Func IsInstanceRunning()
 	Local $iErrorCode = 0 ;
 	_WinAPI_CreateMutex($TOOL_NAME & "_MUTEX", True, 0)
@@ -27,10 +36,17 @@ Func IsInstanceRunning()
 	Return $iErrorCode == $ERROR_ALREADY_EXISTS Or $iErrorCode == $ERROR_ACCESS_DENIED
 EndFunc   ;==>IsInstanceRunning
 
-If (IsInstanceRunning()) Then
+If IsInstanceRunning() Then
 	ConsoleWrite("Already in running")
 	Exit
 EndIf
+
+Func ResetVars()
+	$bIsRunning = False
+	$iMouseX = Null
+	$iMouseY = Null
+	$hTimer = Null
+EndFunc   ;==>ResetVars
 
 Func RunScript()
 	$hTimer = Null
@@ -46,32 +62,24 @@ Func StopScript()
 	Run($sStopScript)
 EndFunc   ;==>StopScript
 
-Func RunBandyCam()
+Func CheckBandyCam()
 	If Not ProcessExists("bdcam.exe") Then
 		Run($sRunScript)
-		Sleep(2000)
-		$bIsRunning = False
-		$hTimer = Null
+		WinWait($sBandicanTitle)
+		ResetVars()
 	EndIf
-EndFunc   ;==>RunBandyCam
 
-Func BandyCamStatus()
-	RunBandyCam()
-	If $bIsRunning = False Then Return
-	Local $aFileList = _FileListToArray($sRecordLocation, "*.bfix", $FLTA_FILES)
-	If @error = 4 And $bIsRunning Then
-		$bIsRunning = False
-		RunScript()
-	EndIf
-EndFunc   ;==>BandyCamStatus
-
-RunBandyCam()
-
-Sleep($iBeforeRunning)
+	WinSetState($sBandicanTitle, "", @SW_HIDE)
+EndFunc   ;==>CheckBandyCam
 
 Func UserIsActive()
 	If $bUser32 = Null Then
 		$bUser32 = DllOpen('user32.dll')
+	EndIf
+
+	If _IsPressed("7B", $bUser32) Then
+		ResetVars()
+		Return True
 	EndIf
 
 	Local $bIsActive = False
@@ -89,9 +97,9 @@ Func UserIsActive()
 			Return True
 
 	For $i = 1 To 94
-		Local $aReturn = DllCall($bUser32, "short", "GetAsyncKeyState", "int", "0x" & Hex($i))
-		If @error <> 0 Then ContinueLoop
-		If BitAND($aReturn[0], 0x8000) <> 0 Then Return True
+		If _IsPressed(Hex($i), $bUser32) Then
+			Return True
+		EndIf
 	Next
 
 	Return False
@@ -112,7 +120,13 @@ Func MustQuitScript()
 	Return $fDiff > $iInactive
 EndFunc   ;==>MustQuitScript
 
-Local $iCpt = 0
+CheckBandyCam()
+
+Sleep($iBeforeRunning)
+
+Local $aMousePos = MouseGetPos()
+$iMouseX = $aMousePos[0]
+$iMouseY = $aMousePos[1]
 
 While True
 	Sleep($iWait)
@@ -123,14 +137,7 @@ While True
 		StopScript()
 	EndIf
 
-	$iCpt = $iCpt + 1
-
-	If $iCpt >= 20 Then
-		$iCpt = 0
-		BandyCamStatus()
-	EndIf
+	CheckBandyCam()
 WEnd
-
-DllClose($bUser32)
 
 Exit
