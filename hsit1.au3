@@ -66,10 +66,9 @@ Func CheckBandyCam()
 	If Not ProcessExists("bdcam.exe") Then
 		Run($sRunScript)
 		WinWait($sBandicanTitle)
+		WinSetState($sBandicanTitle, "", @SW_HIDE)
 		ResetVars()
 	EndIf
-
-	WinSetState($sBandicanTitle, "", @SW_HIDE)
 EndFunc   ;==>CheckBandyCam
 
 Func UserIsActive()
@@ -93,8 +92,7 @@ Func UserIsActive()
 	$iMouseX = $aMousePos[0]
 	$iMouseY = $aMousePos[1]
 
-	If $bIsActive Then _
-			Return True
+	If $bIsActive Then Return True
 
 	For $i = 1 To 94
 		If _IsPressed(Hex($i), $bUser32) Then
@@ -124,6 +122,7 @@ CheckBandyCam()
 
 Sleep($iBeforeRunning)
 
+Local $iTime = 0
 Local $aMousePos = MouseGetPos()
 $iMouseX = $aMousePos[0]
 $iMouseY = $aMousePos[1]
@@ -137,7 +136,14 @@ While True
 		StopScript()
 	EndIf
 
-	CheckBandyCam()
+	$iTime = $iTime + $iWait
+
+	If $iTime > 5000 Then
+		$iTime = 0
+		CheckBandyCam()
+	EndIf
+
+	WinSetState($sBandicanTitle, "", @SW_HIDE)
 WEnd
 
 Exit
