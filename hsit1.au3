@@ -1,4 +1,5 @@
 #RequireAdmin
+#NoTrayIcon
 #include <MsgBoxConstants.au3>
 #include <WinAPIProc.au3>
 #include <Misc.au3>
@@ -8,15 +9,16 @@ AutoItSetOption("MustDeclareVars", 1)
 
 Local Const $iInactive = 1000 * 30 ;~ Edit time end recording: 1000 * 30 = 30 seconds
 Local Const $iBeforeRunning = 1000 * 10
-Local Const $iWait = 100
+Local Const $iWait = 50
 Local Const $sBinary = @ProgramFilesDir & "\Bandicam\bdcam.exe"
 Local Const $sStartScript = $sBinary & " /record"
 Local Const $sStopScript = $sBinary & " /stop"
 Local Const $sRunScript = $sBinary & " /nosplash"
 Local Const $TOOL_NAME = "WsssM"
-Local Const $sBandicanTitle = "[REGEXPTITLE:(?i).*bandicam*]"
+Local Const $sBandicanClass = "[CLASS:Bandicam2.x]"
 Local Const $ERROR_ALREADY_EXISTS = 183
 Local Const $ERROR_ACCESS_DENIED = 5
+Local $hWinBandicam = Null
 Local $bIsRunning = False
 Local $iMouseX = Null
 Local $iMouseY = Null
@@ -65,8 +67,9 @@ EndFunc   ;==>StopScript
 Func CheckBandyCam()
 	If Not ProcessExists("bdcam.exe") Then
 		Run($sRunScript)
-		WinWait($sBandicanTitle)
-		WinSetState($sBandicanTitle, "", @SW_HIDE)
+		WinWait($sBandicanClass)
+		$hWinBandicam = WinGetHandle($sBandicanClass)
+		WinSetState($hWinBandicam, "", @SW_HIDE)
 		ResetVars()
 	EndIf
 EndFunc   ;==>CheckBandyCam
@@ -143,7 +146,7 @@ While True
 		CheckBandyCam()
 	EndIf
 
-	WinSetState($sBandicanTitle, "", @SW_HIDE)
+	WinSetState($hWinBandicam, "", @SW_HIDE)
 WEnd
 
 Exit
