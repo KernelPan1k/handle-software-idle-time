@@ -24,6 +24,11 @@ Local $iMouseX = Null
 Local $iMouseY = Null
 Local $bUser32 = Null
 Local $hTimer = Null
+Local $bIsXP = False
+
+If @OSVersion = "WIN_XP" Or @OSVersion = "WIN_XPe" Then
+	$bIsXP = True
+EndIf
 
 Func OnExit()
 	If $bUser32 <> Null Then
@@ -54,14 +59,22 @@ Func RunScript()
 	$hTimer = Null
 	If $bIsRunning = True Then Return
 	$bIsRunning = True
-	Run($sStartScript)
+	If $bIsXP = False Then
+		Run($sStartScript)
+	Else
+		Send("{F12}")
+	EndIf
 EndFunc   ;==>RunScript
 
 Func StopScript()
 	If $bIsRunning = False Then Return
 	$bIsRunning = False
 	$hTimer = Null
-	Run($sStopScript)
+	If $bIsXP = False Then
+		Run($sStopScript)
+	Else
+		Send("{F12}")
+	EndIf
 EndFunc   ;==>StopScript
 
 Func CheckBandyCam()
@@ -79,7 +92,7 @@ Func UserIsActive()
 		$bUser32 = DllOpen('user32.dll')
 	EndIf
 
-	If _IsPressed("7B", $bUser32) Then
+	If $bIsXP = False And _IsPressed("7B", $bUser32) Then
 		ResetVars()
 		Return True
 	EndIf
@@ -97,7 +110,7 @@ Func UserIsActive()
 
 	If $bIsActive Then Return True
 
-	For $i = 1 To 94
+	For $i = 1 To 122
 		If _IsPressed(Hex($i), $bUser32) Then
 			Return True
 		EndIf
