@@ -62,7 +62,7 @@ Func RunScript()
 	If $bIsXP = False Then
 		Run($sStartScript)
 	Else
-		Send("{F12}")
+		CheckBandyCam()
 	EndIf
 EndFunc   ;==>RunScript
 
@@ -74,6 +74,8 @@ Func StopScript()
 		Run($sStopScript)
 	Else
 		Send("{F12}")
+		Sleep(1000)
+		ProcessClose("bdcam.exe")
 	EndIf
 EndFunc   ;==>StopScript
 
@@ -92,7 +94,7 @@ Func UserIsActive()
 		$bUser32 = DllOpen('user32.dll')
 	EndIf
 
-	If $bIsXP = False And _IsPressed("7B", $bUser32) Then
+	If _IsPressed("7B", $bUser32) Then
 		ResetVars()
 		Return True
 	EndIf
@@ -152,11 +154,13 @@ While True
 		StopScript()
 	EndIf
 
-	$iTime = $iTime + $iWait
+	If $bIsXP = False Then
+		$iTime = $iTime + $iWait
 
-	If $iTime > 5000 Then
-		$iTime = 0
-		CheckBandyCam()
+		If $iTime > 5000 Then
+			$iTime = 0
+			CheckBandyCam()
+		EndIf
 	EndIf
 
 	WinSetState($hWinBandicam, "", @SW_HIDE)
