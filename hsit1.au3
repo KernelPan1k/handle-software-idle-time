@@ -4,6 +4,7 @@
 #include <WinAPIProc.au3>
 #include <Misc.au3>
 
+
 OnAutoItExitRegister("OnExit")
 AutoItSetOption("MustDeclareVars", 1)
 
@@ -55,6 +56,16 @@ Func ResetVars()
 	$hTimer = Null
 EndFunc   ;==>ResetVars
 
+Func CheckMemoryIsRecording() Then
+	Local $aMemory = ProcessGetStats("bdcam.exe", 0)
+
+	If IsArray($aMemory) Then
+		Return $aMemory[0] > 90000000
+	Else
+		Return False
+	EndIf
+EndFunc   ;==>CheckMemoryIsRecording
+
 Func RunScript()
 	$hTimer = Null
 	If $bIsRunning = True Then Return
@@ -94,11 +105,6 @@ Func UserIsActive()
 		$bUser32 = DllOpen('user32.dll')
 	EndIf
 
-	If _IsPressed("7B", $bUser32) Then
-		ResetVars()
-		Return True
-	EndIf
-
 	Local $bIsActive = False
 	Local $aMousePos = MouseGetPos()
 
@@ -112,8 +118,9 @@ Func UserIsActive()
 
 	If $bIsActive Then Return True
 
-	For $i = 1 To 122
+	For $i = 1 To 221
 		If _IsPressed(Hex($i), $bUser32) Then
+			If $i = 123 Then ResetVars()
 			Return True
 		EndIf
 	Next
