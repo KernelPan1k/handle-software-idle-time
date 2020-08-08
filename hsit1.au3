@@ -29,24 +29,12 @@ Local $bKernel32 = Null
 Local $bShell32 = Null
 Local $hTimer = Null
 Local $bIsXP = False
-
-Const $TB_DELETEBUTTON = 1046
-Const $TB_GETBUTTON = 1047
-Const $TB_BUTTONCOUNT = 1048
-Const $TB_GETBUTTONTEXT = 1099
-Const $TB_GETBUTTONINFO = 1089
-Const $TB_HIDEBUTTON = 1028 ; WM_USER +4
-Const $TB_GETITEMRECT = 1053
-Const $TB_MOVEBUTTON = 1106 ; WM_USER +82
-Const $WM_GETTEXT = 13 ; Included in GUIConstants
-Const $PROCESS_ALL_ACCESS = 2035711
-Const $NO_TITLE = "---No title---" ; text that is used when icon window has no title
+Local $iWin = 2
 
 If @OSVersion = "WIN_XP" Or @OSVersion = "WIN_XPe" Then
 	$bIsXP = True
+	$iWin = 1
 EndIf
-
-$bIsXP = True
 
 Func OnExit()
 	If $bUser32 <> Null Then
@@ -73,9 +61,33 @@ If IsInstanceRunning() Then
 	Exit
 EndIf
 
+
+; By wraithdu
+; http://www.autoitscript.com/forum/index.php?showtopic=88214&view=findpost&p=634408
+; ####################### Below Func is Part of example - Needed to get commandline from more processes. ############
+; ####################### Thanks for this function, wraithdu! (Didn't know it was your.) smile.gif #########################
+Func _GetPrivilege_SEDEBUG()
+	Local $tagLUIDANDATTRIB = "int64 Luid;dword Attributes"
+	Local $count = 1
+	Local $tagTOKENPRIVILEGES = "dword PrivilegeCount;byte LUIDandATTRIB[" & $count * 12 & "]" ; count of LUID structs * sizeof LUID struct
+	Local $TOKEN_ADJUST_PRIVILEGES = 0x20
+	Local $call = DllCall("advapi32.dll", "int", "OpenProcessToken", "ptr", _WinAPI_GetCurrentProcess(), "dword", $TOKEN_ADJUST_PRIVILEGES, "ptr*", "")
+	Local $hToken = $call[3]
+	$call = DllCall("advapi32.dll", "int", "LookupPrivilegeValue", "str", Chr(0), "str", "SeDebugPrivilege", "int64*", "")
+	;msgbox(262144,"",$call[3] & " " & _WinAPI_GetLastErrorMessage())
+	Local $iLuid = $call[3]
+	Local $TP = DllStructCreate($tagTOKENPRIVILEGES)
+	Local $LUID = DllStructCreate($tagLUIDANDATTRIB, DllStructGetPtr($TP, "LUIDandATTRIB"))
+	DllStructSetData($TP, "PrivilegeCount", $count)
+	DllStructSetData($LUID, "Luid", $iLuid)
+	DllStructSetData($LUID, "Attributes", $SE_PRIVILEGE_ENABLED)
+	$call = DllCall("advapi32.dll", "int", "AdjustTokenPrivileges", "ptr", $hToken, "int", 0, "ptr", DllStructGetPtr($TP), "dword", 0, "ptr", Chr(0), "ptr", Chr(0))
+	Return ($call[0] <> 0) ; $call[0] <> 0 is success
+EndFunc   ;==>_GetPrivilege_SEDEBUG
+
 ;~ https://www.autoitscript.com/forum/topic/103871-_systray-udf/
 
-Func _SysTrayGetButtonInfo($iIndex, $iWin = 1, $iInfo = 1)
+Func _SysTrayGetButtonInfo($iIndex, $iInfo = 1)
 	Local Const $TB_GETBUTTON = 1047
 ;~  Local Const $TB_GETBUTTONTEXT = 1099
 ;~  Local Const $TB_GETBUTTONINFO = 1089
@@ -93,7 +105,7 @@ Func _SysTrayGetButtonInfo($iIndex, $iWin = 1, $iInfo = 1)
 	Else
 		$TRAYDATA = DllStructCreate("uint64 hwnd;uint uID;uint uCallbackMessage;dword Reserved[2];uint64 hIcon")
 	EndIf
-	Local $trayHwnd = _FindTrayToolbarWindow($iWin)
+	Local $trayHwnd = _FindTrayToolbarWindow()
 	If $trayHwnd = -1 Then Return SetError(1, 0, -1)
 	Local $return, $err = 0
 	Local $ret = DllCall($bUser32, "dword", "GetWindowThreadProcessId", "hwnd", $trayHwnd, "dword*", 0)
@@ -153,7 +165,7 @@ Func _SysTrayGetButtonInfo($iIndex, $iWin = 1, $iInfo = 1)
 	EndIf
 EndFunc   ;==>_SysTrayGetButtonInfo
 
-Func _FindTrayToolbarWindow($iWin = 1)
+Func _FindTrayToolbarWindow()
 	Local $hwnd, $ret = -1
 	If $iWin = 1 Then
 		$hwnd = DllCall($bUser32, "hwnd", "FindWindow", "str", "Shell_TrayWnd", "ptr", 0)
@@ -178,17 +190,17 @@ Func _FindTrayToolbarWindow($iWin = 1)
 	Return $ret
 EndFunc   ;==>_FindTrayToolbarWindow
 
-Func _SysTrayIconCount($iWin = 1)
+Func _SysTrayIconCount()
 	Local Const $TB_BUTTONCOUNT = 1048
-	Local $hwnd = _FindTrayToolbarWindow($iWin)
+	Local $hwnd = _FindTrayToolbarWindow()
 	If $hwnd = -1 Then Return -1
 	Local $count = DllCall($bUser32, "lresult", "SendMessageW", "hwnd", $hwnd, "uint", $TB_BUTTONCOUNT, "wparam", 0, "lparam", 0)
 	If @error Then Return -1
 	Return $count[0]
 EndFunc   ;==>_SysTrayIconCount
 
-Func _SysTrayIconHandle($iIndex, $iWin = 1)
-	Local $TRAYDATA = _SysTrayGetButtonInfo($iIndex, $iWin, 2)
+Func _SysTrayIconHandle($iIndex)
+	Local $TRAYDATA = _SysTrayGetButtonInfo($iIndex)
 	If @error Then
 		Return SetError(@error, 0, -1)
 	Else
@@ -196,20 +208,20 @@ Func _SysTrayIconHandle($iIndex, $iWin = 1)
 	EndIf
 EndFunc   ;==>_SysTrayIconHandle
 
-Func _SysTrayIconTitles($iWin = 1)
-	Local $count = _SysTrayIconCount($iWin)
+Func _SysTrayIconTitles()
+	Local $count = _SysTrayIconCount()
 	If $count <= 0 Then Return -1
 	Local $titles[$count]
 	; Get icon owner window"s title
 	For $i = 0 To $count - 1
-		$titles[$i] = WinGetTitle(_SysTrayIconHandle($i, $iWin))
+		$titles[$i] = WinGetTitle(_SysTrayIconHandle($i))
 	Next
 	Return $titles
 EndFunc   ;==>_SysTrayIconTitles
 
-Func _SysTrayIconRemove($index, $iWin = 1)
+Func _SysTrayIconRemove($index)
 	Local Const $TB_DELETEBUTTON = 1046
-	Local $TRAYDATA = _SysTrayGetButtonInfo($index, $iWin, 2)
+	Local $TRAYDATA = _SysTrayGetButtonInfo($index, 2)
 	If @error Then Return SetError(@error, 0, -1)
 	Local $NOTIFYICONDATA = DllStructCreate("dword cbSize;hwnd hWnd;uint uID;uint uFlags;uint uCallbackMessage;handle hIcon;wchar szTip[128];" _
 			 & "dword dwState;dword dwStateMask;wchar szInfo[256];uint uVersion;wchar szInfoTitle[64];dword dwInfoFlags;" _
@@ -242,7 +254,6 @@ Func RefreshSysTray()
 	Local $titles = _SysTrayIconTitles()
 
 	For $i = 0 To (UBound($titles) - 1)
-		ConsoleWrite($titles[$i] & @CRLF)
 		If $titles[$i] = "" Then
 			_SysTrayIconRemove($i)
 		EndIf
@@ -262,6 +273,7 @@ Func RunScript()
 	$bIsRunning = True
 	If $bIsXP = False Then
 		Run($sStartScript)
+		RefreshSysTray()
 	Else
 		CheckBandyCam()
 	EndIf
@@ -341,6 +353,7 @@ Func MustQuitScript()
 	Return $fDiff > $iInactive
 EndFunc   ;==>MustQuitScript
 
+_GetPrivilege_SEDEBUG()
 CheckBandyCam()
 
 Sleep($iBeforeRunning)
@@ -372,3 +385,4 @@ While True
 WEnd
 
 Exit
+
