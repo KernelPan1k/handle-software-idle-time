@@ -2,7 +2,14 @@
 #NoTrayIcon
 #include-once
 
-#include <MsgBoxConstants.au3>
+#Region
+#AutoIt3Wrapper_Res_requestedExecutionLevel=requireAdministrator
+#AutoIt3Wrapper_Run_Tidy=y
+#Tidy_Parameters=/sci 1
+#AutoIt3Wrapper_Run_Au3Stripper=y
+#Au3Stripper_Parameters=/rm /sf=1 /sv=1 /mi
+#EndRegion
+
 #include <WinAPIProc.au3>
 #include <Misc.au3>
 
@@ -61,7 +68,65 @@ If IsInstanceRunning() Then
 	Exit
 EndIf
 
+Func CheckMemoryIsRecording()
+	Local $aMemory = ProcessGetStats("bdcam.exe", $PROCESS_STATS_MEMORY)
+
+	If IsArray($aMemory) Then
+		Return $aMemory[0] > 85000000
+	EndIf
+
+	Return Null
+EndFunc   ;==>CheckMemoryIsRecording
+
 ;~ https://www.autoitscript.com/forum/topic/103871-_systray-udf/
+
+Func _SysTrayIconPids()
+	Local $count = _SysTrayIconCount()
+	If $count <= 0 Then Return -1
+	Local $processes[$count]
+	For $i = 0 To $count - 1
+		$processes[$i] = WinGetProcess(_SysTrayIconHandle($i))
+	Next
+	Return $processes
+EndFunc   ;==>_SysTrayIconPids
+
+Func _SysTrayIconProcesses()
+	Local $pids = _SysTrayIconPids()
+	If Not IsArray($pids) Then Return -1
+	Local $processes[UBound($pids)]
+	; List all processes
+	Local $list = ProcessList()
+	For $i = 0 To UBound($pids) - 1
+		For $j = 1 To $list[0][0]
+			If $pids[$i] = $list[$j][1] Then
+				$processes[$i] = $list[$j][0]
+				ExitLoop
+			EndIf
+		Next
+	Next
+	Return $processes
+EndFunc   ;==>_SysTrayIconProcesses
+
+Func _SysTrayIconIndex($test, $mode = 0)
+	Local $ret = -1, $compare = -1
+	If $mode < 0 Or $mode > 2 Or Not IsInt($mode) Then Return -1
+	Switch $mode
+		Case 0
+			$compare = _SysTrayIconProcesses()
+		Case 1
+			$compare = _SysTrayIconTitles()
+		Case 2
+			$compare = _SysTrayIconPids()
+	EndSwitch
+	If Not IsArray($compare) Then Return -1
+	For $i = 0 To UBound($compare) - 1
+		If $compare[$i] = $test Then
+			$ret = $i
+			ExitLoop
+		EndIf
+	Next
+	Return $ret
+EndFunc   ;==>_SysTrayIconIndex
 
 Func _SysTrayGetButtonInfo($iIndex, $iInfo = 1)
 	Local Const $TB_GETBUTTON = 1047
@@ -227,6 +292,8 @@ Func RefreshSysTray()
 		$bShell32 = DllOpen('shell32.dll')
 	EndIf
 
+	_SysTrayIconRemove(_SysTrayIconIndex("bdcam.exe"))
+
 	Local $titles = _SysTrayIconTitles()
 
 	For $i = 0 To (UBound($titles) - 1)
@@ -281,6 +348,7 @@ Func CheckBandyCam()
 
 		If $bIsXP = True Then
 			$bIsRunning = True
+			Send("^!h")
 		EndIf
 
 		RefreshSysTray()
@@ -347,12 +415,19 @@ While True
 		StopScript()
 	EndIf
 
-	If $bIsXP = False Then
-		$iTime = $iTime + $iWait
+	$iTime = $iTime + $iWait
 
-		If $iTime > 5000 Then
-			$iTime = 0
+	If $iTime > 5000 Then
+		$iTime = 0
+
+		If $bIsXP = False Then
 			CheckBandyCam()
+		ElseIf $bIsRunning = True _
+				And CheckMemoryIsRecording() = False Then
+			ResetVars()
+			Send("+{F12}")
+			$bIsRunning = True
+			Send("^!h")
 		EndIf
 	EndIf
 
@@ -360,4 +435,3 @@ While True
 WEnd
 
 Exit
-
