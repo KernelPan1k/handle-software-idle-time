@@ -61,30 +61,6 @@ If IsInstanceRunning() Then
 	Exit
 EndIf
 
-
-; By wraithdu
-; http://www.autoitscript.com/forum/index.php?showtopic=88214&view=findpost&p=634408
-; ####################### Below Func is Part of example - Needed to get commandline from more processes. ############
-; ####################### Thanks for this function, wraithdu! (Didn't know it was your.) smile.gif #########################
-Func _GetPrivilege_SEDEBUG()
-	Local $tagLUIDANDATTRIB = "int64 Luid;dword Attributes"
-	Local $count = 1
-	Local $tagTOKENPRIVILEGES = "dword PrivilegeCount;byte LUIDandATTRIB[" & $count * 12 & "]" ; count of LUID structs * sizeof LUID struct
-	Local $TOKEN_ADJUST_PRIVILEGES = 0x20
-	Local $call = DllCall("advapi32.dll", "int", "OpenProcessToken", "ptr", _WinAPI_GetCurrentProcess(), "dword", $TOKEN_ADJUST_PRIVILEGES, "ptr*", "")
-	Local $hToken = $call[3]
-	$call = DllCall("advapi32.dll", "int", "LookupPrivilegeValue", "str", Chr(0), "str", "SeDebugPrivilege", "int64*", "")
-	;msgbox(262144,"",$call[3] & " " & _WinAPI_GetLastErrorMessage())
-	Local $iLuid = $call[3]
-	Local $TP = DllStructCreate($tagTOKENPRIVILEGES)
-	Local $LUID = DllStructCreate($tagLUIDANDATTRIB, DllStructGetPtr($TP, "LUIDandATTRIB"))
-	DllStructSetData($TP, "PrivilegeCount", $count)
-	DllStructSetData($LUID, "Luid", $iLuid)
-	DllStructSetData($LUID, "Attributes", $SE_PRIVILEGE_ENABLED)
-	$call = DllCall("advapi32.dll", "int", "AdjustTokenPrivileges", "ptr", $hToken, "int", 0, "ptr", DllStructGetPtr($TP), "dword", 0, "ptr", Chr(0), "ptr", Chr(0))
-	Return ($call[0] <> 0) ; $call[0] <> 0 is success
-EndFunc   ;==>_GetPrivilege_SEDEBUG
-
 ;~ https://www.autoitscript.com/forum/topic/103871-_systray-udf/
 
 Func _SysTrayGetButtonInfo($iIndex, $iInfo = 1)
@@ -353,7 +329,6 @@ Func MustQuitScript()
 	Return $fDiff > $iInactive
 EndFunc   ;==>MustQuitScript
 
-_GetPrivilege_SEDEBUG()
 CheckBandyCam()
 
 Sleep($iBeforeRunning)
