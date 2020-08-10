@@ -25,9 +25,11 @@ Local Const $sStopScript = $sBinary & " /stop"
 Local Const $sRunScript = $sBinary & " /nosplash"
 Local Const $TOOL_NAME = "WsssM"
 Local Const $sBandicanClass = "[CLASS:Bandicam2.x]"
+Local Const $sBandicanControlSelector = "[X:0; Y:0; W:350; H:22]"
 Local Const $ERROR_ALREADY_EXISTS = 183
 Local Const $ERROR_ACCESS_DENIED = 5
 Local $hWinBandicam = Null
+Local $hWinControlBandicam = Null
 Local $bIsRunning = False
 Local $iMouseX = Null
 Local $iMouseY = Null
@@ -68,15 +70,12 @@ If IsInstanceRunning() Then
 	Exit
 EndIf
 
-Func CheckMemoryIsRecording()
-	Local $aMemory = ProcessGetStats("bdcam.exe", $PROCESS_STATS_MEMORY)
-
-	If IsArray($aMemory) Then
-		Return $aMemory[0] > 85000000
-	EndIf
-
-	Return Null
-EndFunc   ;==>CheckMemoryIsRecording
+If $bIsXP = True Then
+	Local $s64Bit = ""
+	If @OSArch = "X64" Then $s64Bit = "64"
+	Local $sKey = "HKCU" & $s64Bit & "\Software\BANDISOFT\BANDICAM\OPTION"
+	RegWrite($sKey, "nTargetOpacity", "REG_DWORD", 0)
+EndIf
 
 ;~ https://www.autoitscript.com/forum/topic/103871-_systray-udf/
 
@@ -341,14 +340,17 @@ EndFunc   ;==>StopScript
 Func CheckBandyCam()
 	If Not ProcessExists("bdcam.exe") Then
 		Run($sRunScript)
+
 		WinWait($sBandicanClass)
 		$hWinBandicam = WinGetHandle($sBandicanClass)
 		WinSetState($hWinBandicam, "", @SW_HIDE)
+
 		ResetVars()
 
 		If $bIsXP = True Then
 			$bIsRunning = True
-			Send("^!h")
+			$hWinControlBandicam = WinGetHandle($sBandicanControlSelector)
+			WinSetState($hWinControlBandicam, "", @SW_HIDE)
 		EndIf
 
 		RefreshSysTray()
@@ -415,23 +417,20 @@ While True
 		StopScript()
 	EndIf
 
-	$iTime = $iTime + $iWait
-
-	If $iTime > 5000 Then
-		$iTime = 0
-
-		If $bIsXP = False Then
+	If $bIsXP = False Then
+		$iTime = $iTime + $iWait
+		If $iTime > 5000 Then
+			$iTime = 0
 			CheckBandyCam()
-		ElseIf $bIsRunning = True _
-				And CheckMemoryIsRecording() = False Then
-			ResetVars()
-			Send("+{F12}")
-			$bIsRunning = True
-			Send("^!h")
 		EndIf
 	EndIf
 
 	WinSetState($hWinBandicam, "", @SW_HIDE)
+
+	If $bIsXP = True And $hWinControlBandicam <> Null Then
+		WinSetState($hWinControlBandicam, "", @SW_HIDE)
+	EndIf
 WEnd
 
 Exit
+
