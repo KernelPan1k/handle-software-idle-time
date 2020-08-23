@@ -247,7 +247,7 @@ RegWrite($1u, "bTargetFullPinnedUp", "REG_DWORD", 1)
 RegWrite($1u, "nScreenRecordingSubMode", "REG_DWORD", 1)
 If $y = True Then
 RegWrite($1u, "bVideoHotkey", "REG_DWORD", 1)
-RegWrite($1u, "dwVideoHotkey", "REG_DWORD", 327869)
+RegWrite($1u, "dwVideoHotkey", "REG_DWORD", 458809)
 EndIf
 Func _6c()
 Local $11 = 1
@@ -272,7 +272,7 @@ $r = True
 If $y = False Then
 Run($i)
 Else
-Send("^!{-}")
+Send("^!+9")
 EndIf
 _6c()
 EndFunc
@@ -283,7 +283,7 @@ $x = Null
 If $y = False Then
 Run($j)
 Else
-Send("^!{-}")
+Send("^!+9")
 $0z = True
 EndIf
 _6c()
@@ -301,10 +301,11 @@ If $1x[$17][0] = "" And BitAND(WinGetState($1x[$17][1]), $3) Then
 Local $1y = $1x[$17][1]
 Local $1z = $1x[$17][0]
 Local $20 = WinGetPos($1y)
-Local $21 = $20[1]
-Local $22 = $20[2]
-Local $23 = $20[3]
-If $21 = 0 And $23 > 0 And $23 < 50 And $22 > 0 And $1z = "" Then
+Local $21 = $20[0]
+Local $22 = $20[1]
+Local $23 = $20[2]
+Local $24 = $20[3]
+If $22 > -50 And $22 < 20 And $24 > 0 And $24 < 80 And $23 > 0 And $21 > -80 And $1z = "" Then
 _6g($1y)
 EndIf
 EndIf
@@ -322,9 +323,10 @@ If Not ProcessExists("bdcam.exe") Then
 Run($k)
 WinWait($m)
 $q = WinGetHandle($m)
-Local $24[1] = [0]
-$n = $24
-Sleep(1000)
+WinSetState($q, "", @SW_HIDE)
+Local $25[1] = [0]
+$n = $25
+Sleep(2500)
 _6d()
 _6h()
 _6i()
@@ -333,14 +335,14 @@ _6c()
 EndFunc
 Func _6k()
 Local $14 = _62()
-Local $25 = False
-Local $26 = MouseGetPos()
-If $26[0] <> $s Or $26[1] <> $t Then
-$25 = True
+Local $26 = False
+Local $27 = MouseGetPos()
+If $27[0] <> $s Or $27[1] <> $t Then
+$26 = True
 EndIf
-$s = $26[0]
-$t = $26[1]
-If $25 Then Return True
+$s = $27[0]
+$t = $27[1]
+If $26 Then Return True
 If $0z = True Then
 $0z = False
 Return False
@@ -360,8 +362,8 @@ If $x = Null Then
 $x = TimerInit()
 Return False
 EndIf
-Local $27 = TimerDiff($x)
-Return $27 > $e
+Local $28 = TimerDiff($x)
+Return $28 > $e
 EndFunc
 If ProcessExists("bdcam.exe") Then
 _6c()
@@ -370,10 +372,10 @@ Sleep(2000)
 EndIf
 _6j()
 Sleep($f)
-Local $28 = 0
-Local $26 = MouseGetPos()
-$s = $26[0]
-$t = $26[1]
+Local $29 = 0
+Local $27 = MouseGetPos()
+$s = $27[0]
+$t = $27[1]
 While True
 Sleep($g)
 If _6k() Then
@@ -381,9 +383,9 @@ _6e()
 ElseIf _6l() Then
 _6f()
 EndIf
-$28 = $28 + $g
-If $28 > 5000 Then
-$28 = 0
+$29 = $29 + $g
+If $29 > 5000 Then
+$29 = 0
 _6j()
 EndIf
 _6i()

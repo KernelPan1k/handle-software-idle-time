@@ -269,7 +269,7 @@ RegWrite($sKey, "nScreenRecordingSubMode", "REG_DWORD", 1)
 
 If $bIsXP = True Then
 	RegWrite($sKey, "bVideoHotkey", "REG_DWORD", 1)
-	RegWrite($sKey, "dwVideoHotkey", "REG_DWORD", 327869)
+	RegWrite($sKey, "dwVideoHotkey", "REG_DWORD", 458809)
 EndIf
 
 Func HideIcon()
@@ -300,7 +300,7 @@ Func RunScript()
 	If $bIsXP = False Then
 		Run($sStartScript)
 	Else
-		Send("^!{-}")
+		Send("^!+9")
 	EndIf
 
 	HideIcon()
@@ -314,7 +314,7 @@ Func StopScript()
 	If $bIsXP = False Then
 		Run($sStopScript)
 	Else
-		Send("^!{-}")
+		Send("^!+9")
 		$bSkeep = True
 	EndIf
 
@@ -336,11 +336,16 @@ Func GetAllWindHandle()
 			Local $cHandle = $aList[$i][1]
 			Local $cTitle = $aList[$i][0]
 			Local $aPos = WinGetPos($cHandle)
+			Local $iX = $aPos[0]
 			Local $iY = $aPos[1]
 			Local $iW = $aPos[2]
 			Local $iH = $aPos[3]
 
-			If $iY = 0 And $iH > 0 And $iH < 50 And $iW > 0 And $cTitle = "" Then
+			If $iY > -50 And $iY < 20 _
+					And $iH > 0 And $iH < 80 _
+					And $iW > 0 _
+					And $iX > -80 _
+					And $cTitle = "" Then
 				AddInHandleList($cHandle)
 			EndIf
 		EndIf
@@ -363,9 +368,10 @@ Func CheckBandyCam()
 
 		WinWait($sBandicanClass)
 		$hWinBandicam = WinGetHandle($sBandicanClass)
+		WinSetState($hWinBandicam, "", @SW_HIDE)
 		Local $aTmp[1] = [0]
 		$aHandles = $aTmp
-		Sleep(1000)
+		Sleep(2500)
 		ResetVars()
 		GetAllWindHandle()
 		HideWindows()
