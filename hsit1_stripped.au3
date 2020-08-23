@@ -4,41 +4,41 @@ Func _3(Const $0 = @error, Const $1 = @extended)
 Local $2 = DllCall("kernel32.dll", "dword", "GetLastError")
 Return SetError($0, $1, $2[0])
 EndFunc
-Global Const $3 = 'struct;dword OSVersionInfoSize;dword MajorVersion;dword MinorVersion;dword BuildNumber;dword PlatformId;wchar CSDVersion[128];endstruct'
-Global Const $4 = _1g()
+Global Const $3 = 2
+Global Const $4 = 'struct;dword OSVersionInfoSize;dword MajorVersion;dword MinorVersion;dword BuildNumber;dword PlatformId;wchar CSDVersion[128];endstruct'
+Global Const $5 = _1g()
 Func _1g()
-Local $5 = DllStructCreate($3)
-DllStructSetData($5, 1, DllStructGetSize($5))
-Local $6 = DllCall('kernel32.dll', 'bool', 'GetVersionExW', 'struct*', $5)
-If @error Or Not $6[0] Then Return SetError(@error, @extended, 0)
-Return BitOR(BitShift(DllStructGetData($5, 2), -8), DllStructGetData($5, 3))
+Local $6 = DllStructCreate($4)
+DllStructSetData($6, 1, DllStructGetSize($6))
+Local $7 = DllCall('kernel32.dll', 'bool', 'GetVersionExW', 'struct*', $6)
+If @error Or Not $7[0] Then Return SetError(@error, @extended, 0)
+Return BitOR(BitShift(DllStructGetData($6, 2), -8), DllStructGetData($6, 3))
 EndFunc
-Func _3z($7, $8 = True, $9 = 0)
-Local $6 = DllCall('kernel32.dll', 'handle', 'CreateMutexW', 'struct*', $9, 'bool', $8, 'wstr', $7)
+Func _3z($8, $9 = True, $a = 0)
+Local $7 = DllCall('kernel32.dll', 'handle', 'CreateMutexW', 'struct*', $a, 'bool', $9, 'wstr', $8)
 If @error Then Return SetError(@error, @extended, 0)
-Return $6[0]
+Return $7[0]
 EndFunc
-Func _5w($a, $b = "user32.dll")
-Local $c = DllCall($b, "short", "GetAsyncKeyState", "int", "0x" & $a)
+Func _5w($b, $c = "user32.dll")
+Local $d = DllCall($c, "short", "GetAsyncKeyState", "int", "0x" & $b)
 If @error Then Return SetError(@error, @extended, False)
-Return BitAND($c[0], 0x8000) <> 0
+Return BitAND($d[0], 0x8000) <> 0
 EndFunc
 OnAutoItExitRegister("_61")
 AutoItSetOption("MustDeclareVars", 1)
 Opt("WinTitleMatchMode", 4)
-Local Const $d = 1000 * 30
-Local Const $e = 1000 * 10
-Local Const $f = 50
-Local Const $g = @ProgramFilesDir & "\Bandicam\bdcam.exe"
-Local Const $h = $g & " /record"
-Local Const $i = $g & " /stop"
-Local Const $j = $g & " /nosplash"
-Local Const $k = "WsssM"
-Local Const $l = "[CLASS:Bandicam2.x]"
-Local Const $m = "[X:0; Y:0; W:350; H:22]"
-Local Const $n = 183
-Local Const $o = 5
-Local $p = Null
+Local Const $e = 1000 * 30
+Local Const $f = 1000 * 10
+Local Const $g = 50
+Local Const $h = @ProgramFilesDir & "\Bandicam\bdcam.exe"
+Local Const $i = $h & " /record"
+Local Const $j = $h & " /stop"
+Local Const $k = $h & " /nosplash"
+Local Const $l = "WsssM"
+Local Const $m = "[CLASS:Bandicam2.x]"
+Local $n[1] = [0]
+Local Const $o = 183
+Local Const $p = 5
 Local $q = Null
 Local $r = False
 Local $s = Null
@@ -86,9 +86,9 @@ Return $w
 EndFunc
 Func _65()
 Local $10 = 0
-_3z($k & "_MUTEX", True, 0)
+_3z($l & "_MUTEX", True, 0)
 $10 = _3()
-Return $10 == $n Or $10 == $o
+Return $10 == $o Or $10 == $p
 EndFunc
 If _65() Then
 Exit
@@ -240,6 +240,11 @@ RegWrite($1u, "bVideoHotkeyPause", "REG_DWORD", 0)
 RegWrite($1u, "bVideoHotkeyWebcam", "REG_DWORD", 0)
 RegWrite($1u, "bVideoHotkey", "REG_DWORD", 0)
 RegWrite($1u, "bStartMinimized", "REG_DWORD", 1)
+RegWrite($1u, "nTargetMode", "REG_DWORD", 1)
+RegWrite($1u, "nTargetFullOpacity", "REG_DWORD", 20)
+RegWrite($1u, "nTargetOpacity", "REG_DWORD", 20)
+RegWrite($1u, "bTargetFullPinnedUp", "REG_DWORD", 1)
+RegWrite($1u, "nScreenRecordingSubMode", "REG_DWORD", 1)
 If $y = True Then
 RegWrite($1u, "bVideoHotkey", "REG_DWORD", 1)
 RegWrite($1u, "dwVideoHotkey", "REG_DWORD", 327869)
@@ -265,7 +270,7 @@ $x = Null
 If $r = True Then Return
 $r = True
 If $y = False Then
-Run($h)
+Run($i)
 Else
 Send("^!{-}")
 EndIf
@@ -276,37 +281,66 @@ If $r = False Then Return
 $r = False
 $x = Null
 If $y = False Then
-Run($i)
+Run($j)
 Else
 Send("^!{-}")
 $0z = True
 EndIf
 _6c()
 EndFunc
-Func _6g()
-If Not ProcessExists("bdcam.exe") Then
-Run($j)
-WinWait($l)
-$p = WinGetHandle($l)
-WinSetState($p, "", @SW_HIDE)
-_6d()
-If $y = True Then
-$q = WinGetHandle($m)
-WinSetState($q, "", @SW_HIDE)
-EndIf
-_6c()
-EndIf
+Func _6g($1w)
+Local $18 = $n[0] + 1
+ReDim $n[$18 + 1]
+$n[$18] = $1w
+$n[0] = $18
 EndFunc
 Func _6h()
-Local $14 = _62()
-Local $1w = False
-Local $1x = MouseGetPos()
-If $1x[0] <> $s Or $1x[1] <> $t Then
-$1w = True
+Local $1x = WinList()
+For $17 = 1 To $1x[0][0]
+If $1x[$17][0] = "" And BitAND(WinGetState($1x[$17][1]), $3) Then
+Local $1y = $1x[$17][1]
+Local $1z = $1x[$17][0]
+Local $20 = WinGetPos($1y)
+Local $21 = $20[1]
+Local $22 = $20[2]
+Local $23 = $20[3]
+If $21 = 0 And $23 > 0 And $23 < 50 And $22 > 0 And $1z = "" Then
+_6g($1y)
 EndIf
-$s = $1x[0]
-$t = $1x[1]
-If $1w Then Return True
+EndIf
+Next
+EndFunc
+Func _6i()
+WinSetState($q, "", @SW_HIDE)
+If UBound($n) = 1 Then Return
+For $17 = 1 To $n[0]
+WinSetState($n[$17], "", @SW_HIDE)
+Next
+EndFunc
+Func _6j()
+If Not ProcessExists("bdcam.exe") Then
+Run($k)
+WinWait($m)
+$q = WinGetHandle($m)
+Local $24[1] = [0]
+$n = $24
+Sleep(1000)
+_6d()
+_6h()
+_6i()
+EndIf
+_6c()
+EndFunc
+Func _6k()
+Local $14 = _62()
+Local $25 = False
+Local $26 = MouseGetPos()
+If $26[0] <> $s Or $26[1] <> $t Then
+$25 = True
+EndIf
+$s = $26[0]
+$t = $26[1]
+If $25 Then Return True
 If $0z = True Then
 $0z = False
 Return False
@@ -318,7 +352,7 @@ EndIf
 Next
 Return False
 EndFunc
-Func _6i()
+Func _6l()
 If $r = False Then
 Return False
 EndIf
@@ -326,34 +360,31 @@ If $x = Null Then
 $x = TimerInit()
 Return False
 EndIf
-Local $1y = TimerDiff($x)
-Return $1y > $d
+Local $27 = TimerDiff($x)
+Return $27 > $e
 EndFunc
 If ProcessExists("bdcam.exe") Then
 _6c()
 ProcessClose("bdcam.exe")
 Sleep(2000)
 EndIf
-_6g()
-Sleep($e)
-Local $1z = 0
-Local $1x = MouseGetPos()
-$s = $1x[0]
-$t = $1x[1]
-While True
+_6j()
 Sleep($f)
-If _6h() Then
+Local $28 = 0
+Local $26 = MouseGetPos()
+$s = $26[0]
+$t = $26[1]
+While True
+Sleep($g)
+If _6k() Then
 _6e()
-ElseIf _6i() Then
+ElseIf _6l() Then
 _6f()
 EndIf
-$1z = $1z + $f
-If $1z > 5000 Then
-$1z = 0
-_6g()
+$28 = $28 + $g
+If $28 > 5000 Then
+$28 = 0
+_6j()
 EndIf
-WinSetState($p, "", @SW_HIDE)
-If $y And $q <> Null Then
-WinSetState($q, "", @SW_HIDE)
-EndIf
+_6i()
 WEnd
