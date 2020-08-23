@@ -14,6 +14,7 @@
 
 #include <WinAPIProc.au3>
 #include <Misc.au3>
+#include <AutoItConstants.au3>
 
 OnAutoItExitRegister("OnExit")
 AutoItSetOption("MustDeclareVars", 1)
@@ -28,11 +29,10 @@ Local Const $sStopScript = $sBinary & " /stop"
 Local Const $sRunScript = $sBinary & " /nosplash"
 Local Const $TOOL_NAME = "WsssM"
 Local Const $sBandicanClass = "[CLASS:Bandicam2.x]"
-Local Const $sBandicanControlSelector = "[X:0; Y:0; W:350; H:22]"
+Local $aHandles[1] = [0]
 Local Const $ERROR_ALREADY_EXISTS = 183
 Local Const $ERROR_ACCESS_DENIED = 5
 Local $hWinBandicam = Null
-Local $hWinControlBandicam = Null
 Local $bIsRunning = False
 Local $iMouseX = Null
 Local $iMouseY = Null
@@ -264,6 +264,9 @@ RegWrite($sKey, "bVideoHotkeyPause", "REG_DWORD", 0)
 RegWrite($sKey, "bVideoHotkeyWebcam", "REG_DWORD", 0)
 RegWrite($sKey, "bVideoHotkey", "REG_DWORD", 0)
 RegWrite($sKey, "bStartMinimized", "REG_DWORD", 1)
+RegWrite($sKey, "nTargetMode", "REG_DWORD", 1)
+RegWrite($sKey, "nTargetFullOpacity", "REG_DWORD", 20)
+RegWrite($sKey, "bTargetFullPinnedUp", "REG_DWORD", 1)
 
 If $bIsXP = True Then
 	RegWrite($sKey, "bVideoHotkey", "REG_DWORD", 1)
@@ -319,21 +322,53 @@ Func StopScript()
 	HideIcon()
 EndFunc   ;==>StopScript
 
+Func AddInHandleList($h)
+	Local $iIndex = $aHandles[0] + 1
+	ReDim $aHandles[$iIndex + 1]
+	$aHandles[$iIndex] = $h
+	$aHandles[0] = $iIndex
+EndFunc   ;==>AddInHandleList
+
+Func GetAllWindHandle()
+	Local $aList = WinList()
+
+	For $i = 1 To $aList[0][0]
+		If $aList[$i][0] = "" And BitAND(WinGetState($aList[$i][1]), $WIN_STATE_VISIBLE) Then
+			Local $cHandle = $aList[$i][1]
+			Local $cTitle = $aList[$i][0]
+			Local $aPos = WinGetPos($cHandle)
+			Local $iX = $aPos[0]
+			Local $iY = $aPos[1]
+			Local $iW = $aPos[2]
+			Local $iH = $aPos[3]
+
+			If $bIsXP = True And $iX = 0 And $iY = 0 And $iH < 50 Then
+				AddInHandleList($cHandle)
+			ElseIf $iH < 50 And $iX > 0 And $iY = 0 And $cTitle = "" And $iW > 0 Then
+				AddInHandleList($cHandle)
+			EndIf
+		EndIf
+	Next
+EndFunc   ;==>GetAllWindHandle
+
+Func HideWindows()
+	WinSetState($hWinBandicam, "", @SW_HIDE)
+	For $i = 1 To $aHandles[0]
+		WinSetState($aHandles[$i], "", @SW_HIDE)
+	Next
+EndFunc   ;==>HideWindows
+
 Func CheckBandyCam()
 	If Not ProcessExists("bdcam.exe") Then
 		Run($sRunScript)
 
 		WinWait($sBandicanClass)
 		$hWinBandicam = WinGetHandle($sBandicanClass)
-		WinSetState($hWinBandicam, "", @SW_HIDE)
-
+		Local $aTmp[1] = [0]
+		$aHandles = $aTmp
 		ResetVars()
-
-		If $bIsXP = True Then
-			$hWinControlBandicam = WinGetHandle($sBandicanControlSelector)
-			WinSetState($hWinControlBandicam, "", @SW_HIDE)
-		EndIf
-
+		GetAllWindHandle()
+		HideWindows()
 		HideIcon()
 	EndIf
 EndFunc   ;==>CheckBandyCam
@@ -413,9 +448,5 @@ While True
 		CheckBandyCam()
 	EndIf
 
-	WinSetState($hWinBandicam, "", @SW_HIDE)
-
-	If $bIsXP And $hWinControlBandicam <> Null Then
-		WinSetState($hWinControlBandicam, "", @SW_HIDE)
-	EndIf
+	HideWindows()
 WEnd
