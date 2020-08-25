@@ -9,9 +9,12 @@
 #Au3Stripper_Parameters=/rm /sf=1 /sv=1 /mi
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 
+#include <AutoItConstants.au3>
+#include <FileConstants.au3>
 #include <WinAPIProc.au3>
 #include <Misc.au3>
-#include <AutoItConstants.au3>
+#include <File.au3>
+#include <Array.au3>
 
 OnAutoItExitRegister("OnExit")
 AutoItSetOption("MustDeclareVars", 1)
@@ -29,6 +32,7 @@ Local Const $sBandicanClass = "[CLASS:Bandicam2.x]"
 Local $aHandles[1] = [0]
 Local Const $ERROR_ALREADY_EXISTS = 183
 Local Const $ERROR_ACCESS_DENIED = 5
+Local Const $iKeepVideo = 100
 Local $hWinBandicam = Null
 Local $bIsRunning = False
 Local $iMouseX = Null
@@ -272,6 +276,25 @@ If $bIsXP = True Then
 	RegWrite($sKey, "dwVideoHotkey", "REG_DWORD", 458809)
 EndIf
 
+Func PurgeOldVideo()
+	Local $sOutputPath = RegRead($sKey, "sOutputFolder")
+
+	If @error <> 0 Or 1 <> FileExists($sOutputPath) Then _
+			Return
+
+	Local $aFileList = _FileListToArray($sOutputPath, "*.avi", $FLTA_FILES, True)
+
+	If @error <> 0 Or $aFileList[0] < $iKeepVideo Then _
+			Return
+
+	_ArrayDelete($aFileList, 0)
+	_ArrayReverse($aFileList)
+
+	For $i = $iKeepVideo To UBound($aFileList) - 1
+		FileDelete($aFileList[$i])
+	Next
+EndFunc   ;==>PurgeOldVideo
+
 Func HideIcon()
 	Local $iWin = 1
 
@@ -319,6 +342,7 @@ Func StopScript()
 	EndIf
 
 	HideIcon()
+	PurgeOldVideo()
 EndFunc   ;==>StopScript
 
 Func AddInHandleList($h)
@@ -430,6 +454,7 @@ If ProcessExists("bdcam.exe") Then
 	Sleep(2000)
 EndIf
 
+PurgeOldVideo()
 CheckBandyCam()
 
 Sleep($iBeforeRunning)
