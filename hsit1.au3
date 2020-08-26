@@ -19,6 +19,7 @@
 OnAutoItExitRegister("OnExit")
 AutoItSetOption("MustDeclareVars", 1)
 Opt("WinTitleMatchMode", 4)
+Opt("SendKeyDownDelay", 100)
 
 Local Const $iInactive = 1000 * 30 ;~ Edit time end recording: 1000 * 30 = 30 seconds
 Local Const $iBeforeRunning = 1000 * 10
@@ -332,6 +333,7 @@ Func RunScript()
 	$hTimer = Null
 	If $bIsRunning = True Then Return
 	$bIsRunning = True
+
 	If $bIsXP = False Then
 		Run($sStartScript)
 	Else

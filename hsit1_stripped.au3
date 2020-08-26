@@ -99,6 +99,7 @@ EndFunc
 OnAutoItExitRegister("_81")
 AutoItSetOption("MustDeclareVars", 1)
 Opt("WinTitleMatchMode", 4)
+Opt("SendKeyDownDelay", 100)
 Local Const $14 = 1000 * 30
 Local Const $15 = 1000 * 10
 Local Const $16 = 50
