@@ -32,7 +32,7 @@ Local Const $sBandicanClass = "[CLASS:Bandicam2.x]"
 Local $aHandles[1] = [0]
 Local Const $ERROR_ALREADY_EXISTS = 183
 Local Const $ERROR_ACCESS_DENIED = 5
-Local Const $iKeepVideo = 100
+Local $iKeepVideo = 107374182400
 Local $hWinBandicam = Null
 Local $bIsRunning = False
 Local $iMouseX = Null
@@ -43,9 +43,11 @@ Local $bShell32 = Null
 Local $hTimer = Null
 Local $bIsXP = False
 Local $bSkeep = False
+Local $sOutputPath = Null
 
 If @OSVersion = "WIN_XP" Or @OSVersion = "WIN_XPe" Then
 	$bIsXP = True
+	$iKeepVideo = 16106127360
 EndIf
 
 Func OnExit()
@@ -276,22 +278,32 @@ If $bIsXP = True Then
 	RegWrite($sKey, "dwVideoHotkey", "REG_DWORD", 458809)
 EndIf
 
-Func PurgeOldVideo()
-	Local $sOutputPath = RegRead($sKey, "sOutputFolder")
+$sOutputPath = RegRead($sKey, "sOutputFolder")
 
-	If @error <> 0 Or 1 <> FileExists($sOutputPath) Then _
+If @error <> 0 Or 1 <> FileExists($sOutputPath) Then _
+		$sOutputPath = Null
+
+Func PurgeOldVideo()
+	If Not $sOutputPath Then _
+			Return
+
+	Local $iSize = DirGetSize($sOutputPath)
+
+	If $iSize < $iKeepVideo Then _
 			Return
 
 	Local $aFileList = _FileListToArray($sOutputPath, "*.avi", $FLTA_FILES, True)
 
-	If @error <> 0 Or $aFileList[0] < $iKeepVideo Then _
+	If @error <> 0 Or UBound($aFileList) < 2 Then _
 			Return
 
-	_ArrayDelete($aFileList, 0)
-	_ArrayReverse($aFileList)
-
-	For $i = $iKeepVideo To UBound($aFileList) - 1
+	For $i = 1 To UBound($aFileList) - 1
+		Local $iFileSize = FileGetSize($aFileList[$i])
 		FileDelete($aFileList[$i])
+		$iSize = $iSize - $iFileSize
+
+		If $iSize < $iKeepVideo Then _
+				ExitLoop
 	Next
 EndFunc   ;==>PurgeOldVideo
 
