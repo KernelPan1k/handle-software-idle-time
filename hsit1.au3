@@ -42,14 +42,19 @@ Local $bUser32 = Null
 Local $bKernel32 = Null
 Local $bShell32 = Null
 Local $hTimer = Null
+Local $hGlobalTimer = Null
 Local $bIsXP = False
 Local $bSkeep = False
 Local $sOutputPath = Null
+Local $iMaxRecordTime = 540000
 
 If @OSVersion = "WIN_XP" Or @OSVersion = "WIN_XPe" Then
 	$bIsXP = True
 	$iKeepVideo = 16106127360
 EndIf
+
+;~ $iKeepVideo = 8388608
+;~ $iMaxRecordTime = 120000
 
 Func OnExit()
 	If $bUser32 <> Null Then
@@ -296,9 +301,9 @@ Func PurgeOldVideo()
 	If $iSize < $iKeepVideo Then _
 			Return
 
-	Local $aFileList = _FileListToArray($sOutputPath, "*.avi", $FLTA_FILES, True)
+	Local $aFileList = _FileListToArrayRec($sOutputPath, "*.avi;*.mp4;*.bfix", $FLTA_FILES, $FLTAR_NORECUR, $FLTAR_SORT, $FLTAR_FULLPATH)
 
-	If @error <> 0 Or UBound($aFileList) < 2 Then _
+	If @error = 1 Or $aFileList = "" Or UBound($aFileList) < 2 Then _
 			Return
 
 	For $i = 1 To UBound($aFileList) - 1
@@ -330,6 +335,7 @@ Func ResetVars()
 	$iMouseX = Null
 	$iMouseY = Null
 	$hTimer = Null
+	$hGlobalTimer = Null
 EndFunc   ;==>ResetVars
 
 Func RunScript()
@@ -343,6 +349,8 @@ Func RunScript()
 		Send("^!+9")
 	EndIf
 
+	$hGlobalTimer = TimerInit()
+
 	HideIcon()
 EndFunc   ;==>RunScript
 
@@ -350,6 +358,7 @@ Func StopScript()
 	If $bIsRunning = False Then Return
 	$bIsRunning = False
 	$hTimer = Null
+	$hGlobalTimer = Null
 
 	If $bIsXP = False Then
 		Run($sStopScript)
@@ -465,6 +474,26 @@ Func MustQuitScript()
 	Return $fDiff > $iInactive
 EndFunc   ;==>MustQuitScript
 
+Func HaveToRestart()
+	ConsoleWrite(" $bIsRunning " & $bIsRunning & @CRLF)
+	If $bIsRunning = False Then
+		Return False
+	EndIf
+
+	ConsoleWrite(" $hTimer " & $hTimer & @CRLF)
+
+	If $hGlobalTimer = Null Then
+		Return False
+	EndIf
+
+	Local $fDiff = TimerDiff($hGlobalTimer)
+
+	ConsoleWrite(" $fDiff " & $fDiff & " " & $iMaxRecordTime & @CRLF)
+
+
+	Return $fDiff > $iMaxRecordTime
+EndFunc   ;==>HaveToRestart
+
 If ProcessExists("bdcam.exe") Then
 	HideIcon()
 	ProcessClose("bdcam.exe")
@@ -488,6 +517,12 @@ While True
 		RunScript()
 	ElseIf MustQuitScript() Then
 		StopScript()
+	EndIf
+
+	If HaveToRestart() Then
+		StopScript()
+		Sleep(1000)
+		RunScript()
 	EndIf
 
 	$iTime = $iTime + $iWait
