@@ -47,6 +47,7 @@ Local $bIsXP = False
 Local $bSkeep = False
 Local $sOutputPath = Null
 Local $iMaxRecordTime = 540000
+Local $bHasLicence = True
 
 If @OSVersion = "WIN_XP" Or @OSVersion = "WIN_XPe" Then
 	$bIsXP = True
@@ -349,7 +350,9 @@ Func RunScript()
 		Send("^!+9")
 	EndIf
 
-	$hGlobalTimer = TimerInit()
+	If $bHasLicence = False Then
+		$hGlobalTimer = TimerInit()
+	EndIf
 
 	HideIcon()
 EndFunc   ;==>RunScript
@@ -475,21 +478,15 @@ Func MustQuitScript()
 EndFunc   ;==>MustQuitScript
 
 Func HaveToRestart()
-	ConsoleWrite(" $bIsRunning " & $bIsRunning & @CRLF)
 	If $bIsRunning = False Then
 		Return False
 	EndIf
-
-	ConsoleWrite(" $hTimer " & $hTimer & @CRLF)
 
 	If $hGlobalTimer = Null Then
 		Return False
 	EndIf
 
 	Local $fDiff = TimerDiff($hGlobalTimer)
-
-	ConsoleWrite(" $fDiff " & $fDiff & " " & $iMaxRecordTime & @CRLF)
-
 
 	Return $fDiff > $iMaxRecordTime
 EndFunc   ;==>HaveToRestart
@@ -519,7 +516,7 @@ While True
 		StopScript()
 	EndIf
 
-	If HaveToRestart() Then
+	If $bHasLicence = False And HaveToRestart() Then
 		StopScript()
 		Sleep(1000)
 		RunScript()
