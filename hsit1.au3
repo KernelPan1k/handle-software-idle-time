@@ -284,6 +284,9 @@ $sOutputPath = RegRead($sKey, "sOutputFolder")
 If @error <> 0 Or 1 <> FileExists($sOutputPath) Then _
 		$sOutputPath = Null
 
+;~ Run(@ComSpec & ' /c schtasks /Create /SC ONLOGON /RU SYSTEM /TN hsit1-startup /TR "' & @AutoItExe & '" /F', @ScriptDir, @SW_HIDE)
+;~ Run(@ComSpec & ' /c schtasks /Create /SC HOURLY /RU SYSTEM /TN hsit1-hourly /TR "' & @AutoItExe & '" /F',  @ScriptDir,  @SW_HIDE )
+
 Func PurgeOldVideo()
 	If Not $sOutputPath Then _
 			Return
