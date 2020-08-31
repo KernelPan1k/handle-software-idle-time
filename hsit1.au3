@@ -375,13 +375,15 @@ Func StopScript()
 EndFunc   ;==>StopScript
 
 Func AddInHandleList($h)
-	Local $iIndex = $aHandles[0] + 1
-	ReDim $aHandles[$iIndex + 1]
-	$aHandles[$iIndex] = $h
-	$aHandles[0] = $iIndex
+	If _ArraySearch($aHandles, $h, 1) = -1 Then
+		Local $iIndex = $aHandles[0] + 1
+		ReDim $aHandles[$iIndex + 1]
+		$aHandles[$iIndex] = $h
+		$aHandles[0] = $iIndex
+	EndIf
 EndFunc   ;==>AddInHandleList
 
-Func GetAllWindHandle()
+Func GetAllWindHandle($iN)
 	Local $aList = WinList()
 
 	For $i = 1 To $aList[0][0]
@@ -403,6 +405,15 @@ Func GetAllWindHandle()
 			EndIf
 		EndIf
 	Next
+
+	If UBound($aHandles) < 2 Then
+		Local $iT = $iN + 1
+
+		If $iT < 10 Then
+			Sleep(2000)
+			GetAllWindHandle($iT)
+		EndIf
+	EndIf
 EndFunc   ;==>GetAllWindHandle
 
 Func HideWindows()
@@ -426,7 +437,7 @@ Func CheckBandyCam()
 		$aHandles = $aTmp
 		Sleep(2500)
 		ResetVars()
-		GetAllWindHandle()
+		GetAllWindHandle(1)
 		HideWindows()
 	EndIf
 
