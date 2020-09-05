@@ -48,10 +48,34 @@ Local $bSkeep = False
 Local $sOutputPath = Null
 Local $iMaxRecordTime = 540000
 Local $bHasLicence = True
+Local $bHideSystray = True
+Local $iMaxAttempt = 20
 
 If @OSVersion = "WIN_XP" Or @OSVersion = "WIN_XPe" Then
 	$bIsXP = True
 	$iKeepVideo = 16106127360
+EndIf
+
+If UBound($CmdLine) > 1 Then
+	For $i = 1 To UBound($CmdLine) - 1
+		Local $sCurrent = StringSplit($CmdLine[$i], "=", $STR_NOCOUNT)
+		Local $sParam = StringUpper($sCurrent[0])
+		Local $iVal = Number($sCurrent[1])
+
+		If $sParam = "HIDESYSTRAY" Then
+			If $iVal = 0 Then
+				$bHideSystray = False
+			Else
+				$bHideSystray = True
+			EndIf
+
+		ElseIf $sParam = "KEYPRESS" Then
+			Opt("SendKeyDownDelay", $iVal)
+
+		ElseIf $sParam = "MAXATTEMPT" Then
+			$iMaxAttempt = $iVal
+		EndIf
+	Next
 EndIf
 
 ;~ $iKeepVideo = 8388608
@@ -318,6 +342,9 @@ Func PurgeOldVideo()
 EndFunc   ;==>PurgeOldVideo
 
 Func HideIcon()
+	If $bHideSystray = False Then _
+			Return
+
 	Local $iWin = 1
 
 	If $bIsXP = False Then $iWin = 2
@@ -409,7 +436,7 @@ Func GetAllWindHandle($iN)
 	If UBound($aHandles) < 2 Then
 		Local $iT = $iN + 1
 
-		If $iT < 10 Then
+		If $iMaxAttempt = -1 Or $iT < $iMaxAttempt Then
 			Sleep(2000)
 			GetAllWindHandle($iT)
 		EndIf
