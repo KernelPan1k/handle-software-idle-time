@@ -19,6 +19,21 @@
 OnAutoItExitRegister("OnExit")
 AutoItSetOption("MustDeclareVars", 1)
 Opt("WinTitleMatchMode", 4)
+
+Func IsInstanceRunning()
+	Local Const $ERROR_ALREADY_EXISTS = 183
+	Local Const $ERROR_ACCESS_DENIED = 5
+	Local Const $TOOL_NAME = "WsssM"
+	Local $iErrorCode = 0 ;
+	_WinAPI_CreateMutex($TOOL_NAME & "_MUTEX", True, 0)
+	$iErrorCode = _WinAPI_GetLastError()
+	Return $iErrorCode == $ERROR_ALREADY_EXISTS Or $iErrorCode == $ERROR_ACCESS_DENIED
+EndFunc   ;==>IsInstanceRunning
+
+If IsInstanceRunning() Then
+	Exit
+EndIf
+
 Opt("SendKeyDownDelay", 100)
 
 Local Const $iInactive = 1000 * 30 ;~ Edit time end recording: 1000 * 30 = 30 seconds
@@ -28,16 +43,8 @@ Local Const $sBinary = @ProgramFilesDir & "\Bandicam\bdcam.exe"
 Local Const $sStartScript = $sBinary & " /record"
 Local Const $sStopScript = $sBinary & " /stop"
 Local Const $sRunScript = $sBinary & " /nosplash"
-Local Const $TOOL_NAME = "WsssM"
 Local Const $sBandicanClass = "[CLASS:Bandicam2.x]"
-Local $aHandles[1] = [0]
-Local Const $ERROR_ALREADY_EXISTS = 183
-Local Const $ERROR_ACCESS_DENIED = 5
 Local $iKeepVideo = 107374182400
-Local $hWinBandicam = Null
-Local $bIsRunning = False
-Local $iMouseX = Null
-Local $iMouseY = Null
 Local $bUser32 = Null
 Local $bKernel32 = Null
 Local $bShell32 = Null
@@ -49,7 +56,18 @@ Local $sOutputPath = Null
 Local $iMaxRecordTime = 540000
 Local $bHasLicence = True
 Local $bHideSystray = True
+Local $bUserActivity = False
 Local $iMaxAttempt = 20
+Local $aHandles[1] = [0]
+Local $hWinBandicam = Null
+Local $bIsRunning = False
+Local $iMouseX = Null
+Local $iMouseY = Null
+Local $hActiveTimer = Null
+Local $iActiveCount = 0
+Local $iActiveSleep = 3000
+Local $iSleepTimer = Null
+Local $iSleepInitiateStep = 0
 
 If @OSVersion = "WIN_XP" Or @OSVersion = "WIN_XPe" Then
 	$bIsXP = True
@@ -74,12 +92,16 @@ If UBound($CmdLine) > 1 Then
 
 		ElseIf $sParam = "MAXATTEMPT" Then
 			$iMaxAttempt = $iVal
+
+		ElseIf $sParam = "USERACTIVITY" Then
+			If $iVal = 0 Then
+				$bUserActivity = False
+			Else
+				$bUserActivity = True
+			EndIf
 		EndIf
 	Next
 EndIf
-
-;~ $iKeepVideo = 8388608
-;~ $iMaxRecordTime = 120000
 
 Func OnExit()
 	If $bUser32 <> Null Then
@@ -121,17 +143,6 @@ Func getShell32dll()
 
 	Return $bShell32
 EndFunc   ;==>getShell32dll
-
-Func IsInstanceRunning()
-	Local $iErrorCode = 0 ;
-	_WinAPI_CreateMutex($TOOL_NAME & "_MUTEX", True, 0)
-	$iErrorCode = _WinAPI_GetLastError()
-	Return $iErrorCode == $ERROR_ALREADY_EXISTS Or $iErrorCode == $ERROR_ACCESS_DENIED
-EndFunc   ;==>IsInstanceRunning
-
-If IsInstanceRunning() Then
-	Exit
-EndIf
 
 ;~ Function about systray were found here (https://www.autoitscript.com/forum/topic/103871-_systray-udf/) and adapted
 Func _SysTrayIconCount($iWin = 1)
@@ -473,32 +484,88 @@ EndFunc   ;==>CheckBandyCam
 
 Func UserIsActive()
 	Local $bU32Dll = getUser32dll()
-	Local $bIsActive = False
+	Local $bIsActive = 0
 	Local $aMousePos = MouseGetPos()
 
 	If $aMousePos[0] <> $iMouseX _
 			Or $aMousePos[1] <> $iMouseY Then
-		$bIsActive = True
+		$bIsActive = 1
 	EndIf
 
 	$iMouseX = $aMousePos[0]
 	$iMouseY = $aMousePos[1]
 
-	If $bIsActive Then Return True
+	If $bIsActive <> 0 Then _
+			Return $bIsActive
 
 	If $bSkeep = True Then
 		$bSkeep = False
-		Return False
+		Return 0
 	EndIf
 
 	For $i = 1 To 221
 		If _IsPressed(Hex($i), $bU32Dll) Then
-			Return True
+			Return $i
 		EndIf
 	Next
 
-	Return False
+	Return 0
 EndFunc   ;==>UserIsActive
+
+Func ResetActivityVars()
+	$hActiveTimer = Null
+	$iActiveCount = 0
+EndFunc   ;==>ResetActivityVars
+
+Func UserIsEnoughActive($iVal)
+	If $bUserActivity = False Then
+		Return $iVal <> 0
+	EndIf
+
+	If $iSleepInitiateStep = 1 Then
+		$iSleepInitiateStep = 2
+		$iActiveSleep = TimerDiff($iSleepTimer) + 1000
+		$iSleepTimer = Null
+	EndIf
+
+	If $iSleepInitiateStep = 0 Then
+		$iSleepInitiateStep = 1
+		$iSleepTimer = TimerInit()
+	EndIf
+
+	If $bIsRunning = True Then
+		ResetActivityVars()
+		Return False
+	EndIf
+
+	If $iVal > 1 Then
+		ResetActivityVars()
+		Return True
+	EndIf
+
+	Local $fDiff = 0
+	$iActiveCount = $iActiveCount + $iVal
+
+	If $hActiveTimer = Null Then
+		$hActiveTimer = TimerInit()
+		Return False
+	Else
+		$fDiff = TimerDiff($hActiveTimer)
+	EndIf
+
+	If $fDiff < $iActiveSleep Then
+		Return False
+	EndIf
+
+	Local $iTmp = $iActiveCount
+	ResetActivityVars()
+
+	If $iTmp > 1 Then
+		Return True
+	EndIf
+
+	Return False
+EndFunc   ;==>UserIsEnoughActive
 
 Func MustQuitScript()
 	If $bIsRunning = False Then
@@ -548,7 +615,9 @@ $iMouseY = $aMousePos[1]
 While True
 	Sleep($iWait)
 
-	If UserIsActive() Then
+	Local $iActive = UserIsActive()
+
+	If UserIsEnoughActive($iActive) Then
 		RunScript()
 	ElseIf MustQuitScript() Then
 		StopScript()
