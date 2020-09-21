@@ -840,6 +840,9 @@ EndIf
 Next
 EndIf
 Func _82()
+Dim $47
+Dim $48
+Dim $49
 If $47 <> Null Then
 DllClose($47)
 $47 = Null

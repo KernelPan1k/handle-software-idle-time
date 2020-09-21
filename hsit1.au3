@@ -104,6 +104,10 @@ If UBound($CmdLine) > 1 Then
 EndIf
 
 Func OnExit()
+	Dim $bUser32
+	Dim $bKernel32
+	Dim $bShell32
+
 	If $bUser32 <> Null Then
 		DllClose($bUser32)
 		$bUser32 = Null
