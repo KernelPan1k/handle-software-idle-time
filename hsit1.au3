@@ -12,6 +12,8 @@
 #include <AutoItConstants.au3>
 #include <FileConstants.au3>
 #include <WinAPIProc.au3>
+#include <WinAPI.au3>
+#include <WindowsConstants.au3>
 #include <Misc.au3>
 #include <File.au3>
 #include <Array.au3>
@@ -36,38 +38,48 @@ EndIf
 
 Opt("SendKeyDownDelay", 100)
 
+;~ Users vars
 Local Const $iInactive = 1000 * 30 ;~ Edit time end recording: 1000 * 30 = 30 seconds
-Local Const $iBeforeRunning = 1000 * 10
-Local Const $iWait = 50
+Local Const $iBeforeRunning = 2000 * 10
+Local Const $iWait = 500
 Local Const $sBinary = @ProgramFilesDir & "\Bandicam\bdcam.exe"
 Local Const $sStartScript = $sBinary & " /record"
 Local Const $sStopScript = $sBinary & " /stop"
 Local Const $sRunScript = $sBinary & " /nosplash"
 Local Const $sBandicanClass = "[CLASS:Bandicam2.x]"
 Local $iKeepVideo = 107374182400
+
+;~ DLL
 Local $bUser32 = Null
 Local $bKernel32 = Null
 Local $bShell32 = Null
+
+;~ Timer
 Local $hTimer = Null
-Local $hGlobalTimer = Null
+
+;~ Functions
 Local $bIsXP = False
 Local $bSkeep = False
 Local $sOutputPath = Null
-Local $iMaxRecordTime = 540000
-Local $bHasLicence = True
 Local $bHideSystray = True
 Local $bUserActivity = False
 Local $iMaxAttempt = 20
+Local $bIsRunning = False
+
+;~ Handles
 Local $aHandles[1] = [0]
 Local $hWinBandicam = Null
-Local $bIsRunning = False
-Local $iMouseX = Null
-Local $iMouseY = Null
+
+;~ Active
 Local $hActiveTimer = Null
 Local $iActiveCount = 0
-Local $iActiveSleep = 3000
-Local $iSleepTimer = Null
-Local $iSleepInitiateStep = 0
+Local $iActiveSleep = 1500
+
+;~ HOOK
+Local $hStub_KeyProc = Null
+Local $hStub_MouseProc = Null
+Local $hHookKeyboard = Null
+Local $hHookMouse = Null
 
 If @OSVersion = "WIN_XP" Or @OSVersion = "WIN_XPe" Then
 	$bIsXP = True
@@ -122,6 +134,12 @@ Func OnExit()
 		DllClose($bShell32)
 		$bShell32 = Null
 	EndIf
+
+	_WinAPI_UnhookWindowsHookEx($hHookMouse)
+	DllCallbackFree($hStub_MouseProc)
+
+	_WinAPI_UnhookWindowsHookEx($hHookKeyboard)
+	DllCallbackFree($hStub_KeyProc)
 EndFunc   ;==>OnExit
 
 Func getUser32dll()
@@ -375,10 +393,7 @@ EndFunc   ;==>HideIcon
 
 Func ResetVars()
 	$bIsRunning = False
-	$iMouseX = Null
-	$iMouseY = Null
 	$hTimer = Null
-	$hGlobalTimer = Null
 EndFunc   ;==>ResetVars
 
 Func RunScript()
@@ -389,30 +404,22 @@ Func RunScript()
 	If $bIsXP = False Then
 		Run($sStartScript)
 	Else
+		$bSkeep = True
 		Send("^!+9")
 	EndIf
-
-	If $bHasLicence = False Then
-		$hGlobalTimer = TimerInit()
-	EndIf
-
-	HideIcon()
 EndFunc   ;==>RunScript
 
 Func StopScript()
 	If $bIsRunning = False Then Return
 	$bIsRunning = False
 	$hTimer = Null
-	$hGlobalTimer = Null
 
 	If $bIsXP = False Then
 		Run($sStopScript)
 	Else
-		Send("^!+9")
 		$bSkeep = True
+		Send("^!+9")
 	EndIf
-
-	HideIcon()
 	PurgeOldVideo()
 EndFunc   ;==>StopScript
 
@@ -481,95 +488,9 @@ Func CheckBandyCam()
 		ResetVars()
 		GetAllWindHandle(1)
 		HideWindows()
+		HideIcon()
 	EndIf
-
-	HideIcon()
 EndFunc   ;==>CheckBandyCam
-
-Func UserIsActive()
-	Local $bU32Dll = getUser32dll()
-	Local $bIsActive = 0
-	Local $aMousePos = MouseGetPos()
-
-	If $aMousePos[0] <> $iMouseX _
-			Or $aMousePos[1] <> $iMouseY Then
-		$bIsActive = 1
-	EndIf
-
-	$iMouseX = $aMousePos[0]
-	$iMouseY = $aMousePos[1]
-
-	If $bIsActive <> 0 Then _
-			Return $bIsActive
-
-	If $bSkeep = True Then
-		$bSkeep = False
-		Return 0
-	EndIf
-
-	For $i = 1 To 221
-		If _IsPressed(Hex($i), $bU32Dll) Then
-			Return $i
-		EndIf
-	Next
-
-	Return 0
-EndFunc   ;==>UserIsActive
-
-Func ResetActivityVars()
-	$hActiveTimer = Null
-	$iActiveCount = 0
-EndFunc   ;==>ResetActivityVars
-
-Func UserIsEnoughActive($iVal)
-	If $bUserActivity = False Then
-		Return $iVal <> 0
-	EndIf
-
-	If $iSleepInitiateStep = 1 Then
-		$iSleepInitiateStep = 2
-		$iActiveSleep = TimerDiff($iSleepTimer) + 1000
-		$iSleepTimer = Null
-	EndIf
-
-	If $iSleepInitiateStep = 0 Then
-		$iSleepInitiateStep = 1
-		$iSleepTimer = TimerInit()
-	EndIf
-
-	If $bIsRunning = True Then
-		ResetActivityVars()
-		Return False
-	EndIf
-
-	If $iVal > 1 Then
-		ResetActivityVars()
-		Return True
-	EndIf
-
-	Local $fDiff = 0
-	$iActiveCount = $iActiveCount + $iVal
-
-	If $hActiveTimer = Null Then
-		$hActiveTimer = TimerInit()
-		Return False
-	Else
-		$fDiff = TimerDiff($hActiveTimer)
-	EndIf
-
-	If $fDiff < $iActiveSleep Then
-		Return False
-	EndIf
-
-	Local $iTmp = $iActiveCount
-	ResetActivityVars()
-
-	If $iTmp > 1 Then
-		Return True
-	EndIf
-
-	Return False
-EndFunc   ;==>UserIsEnoughActive
 
 Func MustQuitScript()
 	If $bIsRunning = False Then
@@ -583,27 +504,86 @@ Func MustQuitScript()
 
 	Local $fDiff = TimerDiff($hTimer)
 
-	Return $fDiff > $iInactive
+	If $fDiff > $iInactive Then
+		StopScript()
+	EndIf
 EndFunc   ;==>MustQuitScript
 
-Func HaveToRestart()
-	If $bIsRunning = False Then
-		Return False
+Func KeyProc($nCode, $wParam, $lParam)
+	ConsoleWrite("1 ")
+	Local $tKEYHOOKS = DllStructCreate($tagKBDLLHOOKSTRUCT, $lParam)
+	If $nCode < 0 Then
+		Return _WinAPI_CallNextHookEx($hHookKeyboard, $nCode, $wParam, $lParam)
+	EndIf
+	If $bSkeep = True Then
+		ConsoleWrite("2 ")
+		$bSkeep = False
+		Return _WinAPI_CallNextHookEx($hHookKeyboard, $nCode, $wParam, $lParam)
+	EndIf
+	ConsoleWrite("3 ")
+	If $wParam = $WM_KEYDOWN Then
+		ConsoleWrite("4 ")
+		RunScript()
+	EndIf
+	Return _WinAPI_CallNextHookEx($hHookKeyboard, $nCode, $wParam, $lParam)
+EndFunc   ;==>KeyProc
+
+Func ResetActivityVars()
+	$hActiveTimer = Null
+	$iActiveCount = 0
+EndFunc   ;==>ResetActivityVars
+
+Func MouseProc($nCode, $wParam, $lParam)
+	If $bUserActivity = False Then
+		RunScript()
+		Return _WinAPI_CallNextHookEx($hHookMouse, $nCode, $wParam, $lParam)
 	EndIf
 
-	If $hGlobalTimer = Null Then
-		Return False
+	If $bIsRunning = True Then
+		ResetActivityVars()
+		Return _WinAPI_CallNextHookEx($hHookMouse, $nCode, $wParam, $lParam)
 	EndIf
 
-	Local $fDiff = TimerDiff($hGlobalTimer)
+	Local $fDiff = 0
+	$iActiveCount = $iActiveCount + 1
 
-	Return $fDiff > $iMaxRecordTime
-EndFunc   ;==>HaveToRestart
+	If $hActiveTimer = Null Then
+		$hActiveTimer = TimerInit()
+		Return _WinAPI_CallNextHookEx($hHookMouse, $nCode, $wParam, $lParam)
+	Else
+		$fDiff = TimerDiff($hActiveTimer)
+	EndIf
+
+	If $fDiff < $iActiveSleep Then
+		Return _WinAPI_CallNextHookEx($hHookMouse, $nCode, $wParam, $lParam)
+	EndIf
+
+	Local $iTmp = $iActiveCount
+	ResetActivityVars()
+
+	If $iTmp > 3 Then
+		RunScript()
+	EndIf
+
+	Return _WinAPI_CallNextHookEx($hHookMouse, $nCode, $wParam, $lParam)
+EndFunc   ;==>MouseProc
+
+Func InitMouseHook()
+	Local $hmodMouse = _WinAPI_GetModuleHandle(0)
+	$hStub_MouseProc = DllCallbackRegister("MouseProc", "long", "int;wparam;lparam")
+	$hHookMouse = _WinAPI_SetWindowsHookEx($WH_MOUSE_LL, DllCallbackGetPtr($hStub_MouseProc), $hmodMouse)
+EndFunc   ;==>InitMouseHook
+
+Func InitKeyBoardHook()
+	Local $hmodKey = _WinAPI_GetModuleHandle(0)
+	$hStub_KeyProc = DllCallbackRegister("KeyProc", "long", "int;wparam;lparam")
+	$hHookKeyboard = _WinAPI_SetWindowsHookEx($WH_KEYBOARD_LL, DllCallbackGetPtr($hStub_KeyProc), $hmodKey)
+EndFunc   ;==>InitKeyBoardHook
+
 
 If ProcessExists("bdcam.exe") Then
-	HideIcon()
 	ProcessClose("bdcam.exe")
-	Sleep(2000)
+	Sleep(5000)
 EndIf
 
 PurgeOldVideo()
@@ -611,34 +591,29 @@ CheckBandyCam()
 
 Sleep($iBeforeRunning)
 
+InitMouseHook()
+InitKeyBoardHook()
+
 Local $iTime = 0
-Local $aMousePos = MouseGetPos()
-$iMouseX = $aMousePos[0]
-$iMouseY = $aMousePos[1]
+Local $iNbrLoop = 0
 
 While True
 	Sleep($iWait)
 
-	Local $iActive = UserIsActive()
-
-	If UserIsEnoughActive($iActive) Then
-		RunScript()
-	ElseIf MustQuitScript() Then
-		StopScript()
-	EndIf
-
-	If $bHasLicence = False And HaveToRestart() Then
-		StopScript()
-		Sleep(1000)
-		RunScript()
-	EndIf
+	MustQuitScript()
 
 	$iTime = $iTime + $iWait
+	$iNbrLoop = $iNbrLoop + 1
 
-	If $iTime > 5000 Then
+;~ Try to improve perf on very old machines
+	If $iNbrLoop = 2 Then
+		$iNbrLoop = 0
+		HideWindows()
+	EndIf
+
+;~ Try to improve perf on very old machines
+	If $iTime > 15000 Then
 		$iTime = 0
 		CheckBandyCam()
 	EndIf
-
-	HideWindows()
 WEnd
