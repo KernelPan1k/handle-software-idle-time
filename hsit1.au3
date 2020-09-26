@@ -42,12 +42,6 @@ Opt("SendKeyDownDelay", 100)
 Local Const $iInactive = 1000 * 30 ;~ Edit time end recording: 1000 * 30 = 30 seconds
 Local Const $iBeforeRunning = 2000 * 10
 Local Const $iWait = 500
-Local Const $sBinary = @ProgramFilesDir & "\Bandicam\bdcam.exe"
-Local Const $sStartScript = $sBinary & " /record"
-Local Const $sStopScript = $sBinary & " /stop"
-Local Const $sRunScript = $sBinary & " /nosplash"
-Local Const $sBandicanClass = "[CLASS:Bandicam2.x]"
-Local $iKeepVideo = 107374182400
 
 ;~ DLL
 Local $bUser32 = Null
@@ -58,13 +52,20 @@ Local $bShell32 = Null
 Local $hTimer = Null
 
 ;~ Functions
+Local Const $sBinary = @ProgramFilesDir & "\Bandicam\bdcam.exe"
+Local Const $sStartScript = $sBinary & " /record"
+Local Const $sStopScript = $sBinary & " /stop"
+Local Const $sRunScript = $sBinary & " /nosplash"
+Local Const $sBandicanClass = "[CLASS:Bandicam2.x]"
+Local $iKeepVideo = 107374182400
 Local $bIsXP = False
-Local $bSkeep = False
+Local $iSkip = 0
 Local $sOutputPath = Null
 Local $bHideSystray = True
-Local $bUserActivity = False
+Local $bUserActivity = True
 Local $iMaxAttempt = 20
 Local $bIsRunning = False
+Local $bdCamIdle = 0
 
 ;~ Handles
 Local $aHandles[1] = [0]
@@ -135,11 +136,21 @@ Func OnExit()
 		$bShell32 = Null
 	EndIf
 
-	_WinAPI_UnhookWindowsHookEx($hHookMouse)
-	DllCallbackFree($hStub_MouseProc)
+	If $hHookMouse <> Null Then
+		_WinAPI_UnhookWindowsHookEx($hHookMouse)
+	EndIf
 
-	_WinAPI_UnhookWindowsHookEx($hHookKeyboard)
-	DllCallbackFree($hStub_KeyProc)
+	If $hStub_MouseProc <> Null Then
+		DllCallbackFree($hStub_MouseProc)
+	EndIf
+
+	If $hHookKeyboard <> Null Then
+		_WinAPI_UnhookWindowsHookEx($hHookKeyboard)
+	EndIf
+
+	If $hStub_KeyProc <> Null Then
+		DllCallbackFree($hStub_KeyProc)
+	EndIf
 EndFunc   ;==>OnExit
 
 Func getUser32dll()
@@ -347,8 +358,6 @@ $sOutputPath = RegRead($sKey, "sOutputFolder")
 If @error <> 0 Or 1 <> FileExists($sOutputPath) Then _
 		$sOutputPath = Null
 
-;~ Run(@ComSpec & ' /c schtasks /Create /SC ONLOGON /RU SYSTEM /TN hsit1-startup /TR "' & @AutoItExe & '" /F', @ScriptDir, @SW_HIDE)
-;~ Run(@ComSpec & ' /c schtasks /Create /SC HOURLY /RU SYSTEM /TN hsit1-hourly /TR "' & @AutoItExe & '" /F',  @ScriptDir,  @SW_HIDE )
 
 Func PurgeOldVideo()
 	If Not $sOutputPath Then _
@@ -404,7 +413,6 @@ Func RunScript()
 	If $bIsXP = False Then
 		Run($sStartScript)
 	Else
-		$bSkeep = True
 		Send("^!+9")
 	EndIf
 EndFunc   ;==>RunScript
@@ -417,9 +425,10 @@ Func StopScript()
 	If $bIsXP = False Then
 		Run($sStopScript)
 	Else
-		$bSkeep = True
+		$iSkip = 1
 		Send("^!+9")
 	EndIf
+
 	PurgeOldVideo()
 EndFunc   ;==>StopScript
 
@@ -510,21 +519,20 @@ Func MustQuitScript()
 EndFunc   ;==>MustQuitScript
 
 Func KeyProc($nCode, $wParam, $lParam)
-	ConsoleWrite("1 ")
 	Local $tKEYHOOKS = DllStructCreate($tagKBDLLHOOKSTRUCT, $lParam)
+
 	If $nCode < 0 Then
 		Return _WinAPI_CallNextHookEx($hHookKeyboard, $nCode, $wParam, $lParam)
 	EndIf
-	If $bSkeep = True Then
-		ConsoleWrite("2 ")
-		$bSkeep = False
+
+	If $iSkip > 0 Then
 		Return _WinAPI_CallNextHookEx($hHookKeyboard, $nCode, $wParam, $lParam)
 	EndIf
-	ConsoleWrite("3 ")
+
 	If $wParam = $WM_KEYDOWN Then
-		ConsoleWrite("4 ")
 		RunScript()
 	EndIf
+
 	Return _WinAPI_CallNextHookEx($hHookKeyboard, $nCode, $wParam, $lParam)
 EndFunc   ;==>KeyProc
 
@@ -534,6 +542,16 @@ Func ResetActivityVars()
 EndFunc   ;==>ResetActivityVars
 
 Func MouseProc($nCode, $wParam, $lParam)
+	If $nCode < 0 Then
+		Return _WinAPI_CallNextHookEx($hHookKeyboard, $nCode, $wParam, $lParam)
+	EndIf
+
+	$bdCamIdle = $bdCamIdle + 1
+
+	If $bdCamIdle < 3 Then
+		Return _WinAPI_CallNextHookEx($hHookMouse, $nCode, $wParam, $lParam)
+	EndIf
+
 	If $bUserActivity = False Then
 		RunScript()
 		Return _WinAPI_CallNextHookEx($hHookMouse, $nCode, $wParam, $lParam)
@@ -561,7 +579,7 @@ Func MouseProc($nCode, $wParam, $lParam)
 	Local $iTmp = $iActiveCount
 	ResetActivityVars()
 
-	If $iTmp > 3 Then
+	If $iTmp > 10 Then
 		RunScript()
 	EndIf
 
@@ -599,6 +617,18 @@ Local $iNbrLoop = 0
 
 While True
 	Sleep($iWait)
+
+	$bdCamIdle = 0
+
+;~ 	Please refactore me
+	If $iSkip > 0 Then
+		$iSkip = $iSkip + 1
+	EndIf
+
+;~ 	Please refactore me
+	If $iSkip >= 3 Then
+		$iSkip = 0
+	EndIf
 
 	MustQuitScript()
 

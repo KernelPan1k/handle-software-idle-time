@@ -814,53 +814,54 @@ Opt("SendKeyDownDelay", 100)
 Local Const $4g = 1000 * 30
 Local Const $4h = 2000 * 10
 Local Const $4i = 500
-Local Const $4j = @ProgramFilesDir & "\Bandicam\bdcam.exe"
-Local Const $4k = $4j & " /record"
-Local Const $4l = $4j & " /stop"
-Local Const $4m = $4j & " /nosplash"
-Local Const $4n = "[CLASS:Bandicam2.x]"
-Local $4o = 107374182400
-Local $4p = Null
-Local $4q = Null
-Local $4r = Null
-Local $4s = Null
+Local $4j = Null
+Local $4k = Null
+Local $4l = Null
+Local $4m = Null
+Local Const $4n = @ProgramFilesDir & "\Bandicam\bdcam.exe"
+Local Const $4o = $4n & " /record"
+Local Const $4p = $4n & " /stop"
+Local Const $4q = $4n & " /nosplash"
+Local Const $4r = "[CLASS:Bandicam2.x]"
+Local $4s = 107374182400
 Local $4t = False
-Local $4u = False
+Local $4u = 0
 Local $4v = Null
 Local $4w = True
-Local $4x = False
+Local $4x = True
 Local $4y = 20
 Local $4z = False
-Local $50[1] = [0]
-Local $51 = Null
+Local $50 = 0
+Local $51[1] = [0]
 Local $52 = Null
-Local $53 = 0
-Local $54 = 1500
-Local $55 = Null
+Local $53 = Null
+Local $54 = 0
+Local $55 = 1500
 Local $56 = Null
 Local $57 = Null
 Local $58 = Null
+Local $59 = Null
 If @OSVersion = "WIN_XP" Or @OSVersion = "WIN_XPe" Then
 $4t = True
-$4o = 16106127360
+$4s = 16106127360
 EndIf
 If UBound($cmdline) > 1 Then
 For $20 = 1 To UBound($cmdline) - 1
-Local $59 = StringSplit($cmdline[$20], "=", $h)
-Local $5a = StringUpper($59[0])
-Local $5b = Number($59[1])
-If $5a = "HIDESYSTRAY" Then
-If $5b = 0 Then
+Local $5a = StringSplit($cmdline[$20], "=", $h)
+Local $5b = StringUpper($5a[0])
+Local $5c = Number($5a[1])
+If $5b = "HIDESYSTRAY" Then
+If $5c = 0 Then
 $4w = False
 Else
 $4w = True
 EndIf
-ElseIf $5a = "KEYPRESS" Then
-Opt("SendKeyDownDelay", $5b)
-ElseIf $5a = "MAXATTEMPT" Then
-$4y = $5b
-ElseIf $5a = "USERACTIVITY" Then
-If $5b = 0 Then
+ElseIf $5b = "KEYPRESS" Then
+Opt("SendKeyDownDelay", $5c)
+ElseIf $5b = "MAXATTEMPT" Then
+$4y = $5c
+ElseIf $5b = "USERACTIVITY" Then
+If $5c = 0 Then
 $4x = False
 Else
 $4x = True
@@ -869,300 +870,307 @@ EndIf
 Next
 EndIf
 Func _ul()
-Dim $4p
-Dim $4q
-Dim $4r
-If $4p <> Null Then
-DllClose($4p)
-$4p = Null
+Dim $4j
+Dim $4k
+Dim $4l
+If $4j <> Null Then
+DllClose($4j)
+$4j = Null
 EndIf
-If $4q <> Null Then
-DllClose($4q)
-$4q = Null
+If $4k <> Null Then
+DllClose($4k)
+$4k = Null
 EndIf
-If $4r <> Null Then
-DllClose($4r)
-$4r = Null
+If $4l <> Null Then
+DllClose($4l)
+$4l = Null
 EndIf
+If $59 <> Null Then
+_fq($59)
+EndIf
+If $57 <> Null Then
+DllCallbackFree($57)
+EndIf
+If $58 <> Null Then
 _fq($58)
+EndIf
+If $56 <> Null Then
 DllCallbackFree($56)
-_fq($57)
-DllCallbackFree($55)
+EndIf
 EndFunc
 Func _um()
-If $4p = Null Then
-$4p = DllOpen('user32.dll')
+If $4j = Null Then
+$4j = DllOpen('user32.dll')
 EndIf
-Return $4p
+Return $4j
 EndFunc
 Func _un()
-If $4q = Null Then
-$4q = DllOpen('kernel32.dll')
+If $4k = Null Then
+$4k = DllOpen('kernel32.dll')
 EndIf
-Return $4q
+Return $4k
 EndFunc
 Func _uo()
-If $4r = Null Then
-$4r = DllOpen('shell32.dll')
+If $4l = Null Then
+$4l = DllOpen('shell32.dll')
 EndIf
-Return $4r
+Return $4l
 EndFunc
-Func _up($5c = 1)
-Local Const $5d = 1048
-Local $1j = _uu($5c)
+Func _up($5d = 1)
+Local Const $5e = 1048
+Local $1j = _uu($5d)
 If $1j = -1 Then Return -1
-Local $5e = _um()
-Local $5f = DllCall($5e, "lresult", "SendMessageW", "hwnd", $1j, "uint", $5d, "wparam", 0, "lparam", 0)
+Local $5f = _um()
+Local $5g = DllCall($5f, "lresult", "SendMessageW", "hwnd", $1j, "uint", $5e, "wparam", 0, "lparam", 0)
 If @error Then Return -1
-Return $5f[0]
+Return $5g[0]
 EndFunc
-Func _uq($5c = 1)
-Local $5f = _up($5c)
-If $5f <= 0 Then Return -1
-Local $5g[$5f]
-For $20 = 0 To $5f - 1
-$5g[$20] = WinGetTitle(_us($20, $5c))
+Func _uq($5d = 1)
+Local $5g = _up($5d)
+If $5g <= 0 Then Return -1
+Local $5h[$5g]
+For $20 = 0 To $5g - 1
+$5h[$20] = WinGetTitle(_us($20, $5d))
 Next
-Return $5g
+Return $5h
 EndFunc
-Func _ur($1n, $5c = 1, $5h = 1)
-Local Const $5i = 1047
-Local Const $5j = 1053
-Local $5e = _um()
-Local $5k = _un()
-Local Const $5l = BitOR(0x0008, 0x0010, 0x0400)
-Local $5m
-If @OSArch = "X86" Then
-$5m = DllStructCreate("int iBitmap;int idCommand;byte fsState;byte fsStyle;byte bReserved[2];dword dwData;int iString")
-Else
-$5m = DllStructCreate("int iBitmap;int idCommand;byte fsState;byte fsStyle;byte bReserved[6];uint64 dwData;int64 iString")
-EndIf
+Func _ur($1n, $5d = 1, $5i = 1)
+Local Const $5j = 1047
+Local Const $5k = 1053
+Local $5f = _um()
+Local $5l = _un()
+Local Const $5m = BitOR(0x0008, 0x0010, 0x0400)
 Local $5n
 If @OSArch = "X86" Then
-$5n = DllStructCreate("hwnd hwnd;uint uID;uint uCallbackMessage;dword Reserved[2];handle hIcon")
+$5n = DllStructCreate("int iBitmap;int idCommand;byte fsState;byte fsStyle;byte bReserved[2];dword dwData;int iString")
 Else
-$5n = DllStructCreate("uint64 hwnd;uint uID;uint uCallbackMessage;dword Reserved[2];uint64 hIcon")
+$5n = DllStructCreate("int iBitmap;int idCommand;byte fsState;byte fsStyle;byte bReserved[6];uint64 dwData;int64 iString")
 EndIf
-Local $5o = _uu($5c)
-If $5o = -1 Then Return SetError(1, 0, -1)
-Local $5p, $5q = 0
-Local $5r = DllCall($5e, "dword", "GetWindowThreadProcessId", "hwnd", $5o, "dword*", 0)
-If @error Or Not $5r[2] Then SetError(2, 0, -1)
-Local $5s = $5r[2]
-Local $5t = DllCall($5k, "handle", "OpenProcess", "dword", $5l, "bool", False, "dword", $5s)
-If @error Or Not $5t[0] Then Return SetError(3, 0, -1)
-Local $5u = DllCall($5k, "ptr", "VirtualAllocEx", "handle", $5t[0], "ptr", 0, "ulong", DllStructGetSize($5m), "dword", 0x1000, "dword", 0x04)
-If Not @error And $5u[0] Then
-$5r = DllCall($5e, "lresult", "SendMessageW", "hwnd", $5o, "uint", $5i, "wparam", $1n, "lparam", $5u[0])
-If Not @error And $5r[0] Then
-DllCall($5k, "bool", "ReadProcessMemory", "handle", $5t[0], "ptr", $5u[0], "struct*", $5m, "ulong", DllStructGetSize($5m), "ulong*", 0)
-Switch $5h
+Local $5o
+If @OSArch = "X86" Then
+$5o = DllStructCreate("hwnd hwnd;uint uID;uint uCallbackMessage;dword Reserved[2];handle hIcon")
+Else
+$5o = DllStructCreate("uint64 hwnd;uint uID;uint uCallbackMessage;dword Reserved[2];uint64 hIcon")
+EndIf
+Local $5p = _uu($5d)
+If $5p = -1 Then Return SetError(1, 0, -1)
+Local $5q, $5r = 0
+Local $5s = DllCall($5f, "dword", "GetWindowThreadProcessId", "hwnd", $5p, "dword*", 0)
+If @error Or Not $5s[2] Then SetError(2, 0, -1)
+Local $5t = $5s[2]
+Local $5u = DllCall($5l, "handle", "OpenProcess", "dword", $5m, "bool", False, "dword", $5t)
+If @error Or Not $5u[0] Then Return SetError(3, 0, -1)
+Local $5v = DllCall($5l, "ptr", "VirtualAllocEx", "handle", $5u[0], "ptr", 0, "ulong", DllStructGetSize($5n), "dword", 0x1000, "dword", 0x04)
+If Not @error And $5v[0] Then
+$5s = DllCall($5f, "lresult", "SendMessageW", "hwnd", $5p, "uint", $5j, "wparam", $1n, "lparam", $5v[0])
+If Not @error And $5s[0] Then
+DllCall($5l, "bool", "ReadProcessMemory", "handle", $5u[0], "ptr", $5v[0], "struct*", $5n, "ulong", DllStructGetSize($5n), "ulong*", 0)
+Switch $5i
 Case 2
-DllCall($5k, "bool", "ReadProcessMemory", "handle", $5t[0], "ptr", DllStructGetData($5m, 6), "struct*", $5n, "ulong", DllStructGetSize($5n), "ulong*", 0)
-$5p = $5n
+DllCall($5l, "bool", "ReadProcessMemory", "handle", $5u[0], "ptr", DllStructGetData($5n, 6), "struct*", $5o, "ulong", DllStructGetSize($5o), "ulong*", 0)
+$5q = $5o
 Case 3
-$5p = ""
-If BitShift(DllStructGetData($5m, 7), 16) <> 0 Then
-Local $5v = DllStructCreate("wchar[1024]")
-DllCall($5k, "bool", "ReadProcessMemory", "handle", $5t[0], "ptr", DllStructGetData($5m, 7), "struct*", $5v, "ulong", DllStructGetSize($5v), "ulong*", 0)
-$5p = DllStructGetData($5v, 1)
+$5q = ""
+If BitShift(DllStructGetData($5n, 7), 16) <> 0 Then
+Local $5w = DllStructCreate("wchar[1024]")
+DllCall($5l, "bool", "ReadProcessMemory", "handle", $5u[0], "ptr", DllStructGetData($5n, 7), "struct*", $5w, "ulong", DllStructGetSize($5w), "ulong*", 0)
+$5q = DllStructGetData($5w, 1)
 EndIf
 Case 4
-If Not BitAND(DllStructGetData($5m, 3), 8) Then
-Local $5w[2], $5x = DllStructCreate("int;int;int;int")
-DllCall($5e, "lresult", "SendMessageW", "hwnd", $5o, "uint", $5j, "wparam", $1n, "lparam", $5u[0])
-DllCall($5k, "bool", "ReadProcessMemory", "handle", $5t[0], "ptr", $5u[0], "struct*", $5x, "ulong", DllStructGetSize($5x), "ulong*", 0)
-$5r = DllCall($5e, "int", "MapWindowPoints", "hwnd", $5o, "ptr", 0, "struct*", $5x, "uint", 2)
-$5w[0] = DllStructGetData($5x, 1)
-$5w[1] = DllStructGetData($5x, 2)
-$5p = $5w
+If Not BitAND(DllStructGetData($5n, 3), 8) Then
+Local $5x[2], $5y = DllStructCreate("int;int;int;int")
+DllCall($5f, "lresult", "SendMessageW", "hwnd", $5p, "uint", $5k, "wparam", $1n, "lparam", $5v[0])
+DllCall($5l, "bool", "ReadProcessMemory", "handle", $5u[0], "ptr", $5v[0], "struct*", $5y, "ulong", DllStructGetSize($5y), "ulong*", 0)
+$5s = DllCall($5f, "int", "MapWindowPoints", "hwnd", $5p, "ptr", 0, "struct*", $5y, "uint", 2)
+$5x[0] = DllStructGetData($5y, 1)
+$5x[1] = DllStructGetData($5y, 2)
+$5q = $5x
 Else
-$5p = -1
+$5q = -1
 EndIf
 Case Else
-$5p = $5m
+$5q = $5n
 EndSwitch
 Else
-$5q = 5
+$5r = 5
 EndIf
-DllCall($5k, "bool", "VirtualFreeEx", "handle", $5t[0], "ptr", $5u[0], "ulong", 0, "dword", 0x8000)
+DllCall($5l, "bool", "VirtualFreeEx", "handle", $5u[0], "ptr", $5v[0], "ulong", 0, "dword", 0x8000)
 Else
-$5q = 4
+$5r = 4
 EndIf
-DllCall($5k, "bool", "CloseHandle", "handle", $5t[0])
-If $5q Then
-Return SetError($5q, 0, -1)
+DllCall($5l, "bool", "CloseHandle", "handle", $5u[0])
+If $5r Then
+Return SetError($5r, 0, -1)
 Else
-Return $5p
+Return $5q
 EndIf
 EndFunc
-Func _us($1n, $5c = 1)
-Local $5n = _ur($1n, $5c, 2)
+Func _us($1n, $5d = 1)
+Local $5o = _ur($1n, $5d, 2)
 If @error Then
 Return SetError(@error, 0, -1)
 Else
-Return Ptr(DllStructGetData($5n, 1))
+Return Ptr(DllStructGetData($5o, 1))
 EndIf
 EndFunc
-Func _ut($5y, $5c = 1)
-Local $5e = _um()
-Local $5z = _uo()
-Local $5n = _ur($5y, $5c, 2)
+Func _ut($5z, $5d = 1)
+Local $5f = _um()
+Local $60 = _uo()
+Local $5o = _ur($5z, $5d, 2)
 If @error Then Return SetError(@error, 0, -1)
-Local $60 = DllStructCreate("dword cbSize;hwnd hWnd;uint uID;uint uFlags;uint uCallbackMessage;handle hIcon;wchar szTip[128];" & "dword dwState;dword dwStateMask;wchar szInfo[256];uint uVersion;wchar szInfoTitle[64];dword dwInfoFlags;" & "STRUCT;ulong;ushort;ushort;byte[8];ENDSTRUCT;handle hBalloonIcon")
-DllStructSetData($60, 1, DllStructGetSize($60))
-DllStructSetData($60, 2, Ptr(DllStructGetData($5n, 1)))
-DllStructSetData($60, 3, DllStructGetData($5n, 2))
-Local $5r = DllCall($5z, "bool", "Shell_NotifyIconW", "dword", 0x2, "struct*", $60)
-DllCall($5e, "lresult", "SendMessageW", "hwnd", WinGetHandle("[CLASS:Shell_TrayWnd]"), "uint", 0x001A, "wparam", 0, "lparam", 0)
-If IsArray($5r) And $5r[0] Then
+Local $61 = DllStructCreate("dword cbSize;hwnd hWnd;uint uID;uint uFlags;uint uCallbackMessage;handle hIcon;wchar szTip[128];" & "dword dwState;dword dwStateMask;wchar szInfo[256];uint uVersion;wchar szInfoTitle[64];dword dwInfoFlags;" & "STRUCT;ulong;ushort;ushort;byte[8];ENDSTRUCT;handle hBalloonIcon")
+DllStructSetData($61, 1, DllStructGetSize($61))
+DllStructSetData($61, 2, Ptr(DllStructGetData($5o, 1)))
+DllStructSetData($61, 3, DllStructGetData($5o, 2))
+Local $5s = DllCall($60, "bool", "Shell_NotifyIconW", "dword", 0x2, "struct*", $61)
+DllCall($5f, "lresult", "SendMessageW", "hwnd", WinGetHandle("[CLASS:Shell_TrayWnd]"), "uint", 0x001A, "wparam", 0, "lparam", 0)
+If IsArray($5s) And $5s[0] Then
 Return 1
 Else
 Return 0
 EndIf
 EndFunc
-Func _uu($5c = 1)
-Local $1j, $5r = -1
-Local $5e = _um()
-If $5c = 1 Then
-$1j = DllCall($5e, "hwnd", "FindWindow", "str", "Shell_TrayWnd", "ptr", 0)
+Func _uu($5d = 1)
+Local $1j, $5s = -1
+Local $5f = _um()
+If $5d = 1 Then
+$1j = DllCall($5f, "hwnd", "FindWindow", "str", "Shell_TrayWnd", "ptr", 0)
 If @error Then Return -1
-$1j = DllCall($5e, "hwnd", "FindWindowEx", "hwnd", $1j[0], "hwnd", 0, "str", "TrayNotifyWnd", "ptr", 0)
+$1j = DllCall($5f, "hwnd", "FindWindowEx", "hwnd", $1j[0], "hwnd", 0, "str", "TrayNotifyWnd", "ptr", 0)
 If @error Then Return -1
 If @OSVersion <> "WIN_2000" Then
-$1j = DllCall($5e, "hwnd", "FindWindowEx", "hwnd", $1j[0], "hwnd", 0, "str", "SysPager", "ptr", 0)
+$1j = DllCall($5f, "hwnd", "FindWindowEx", "hwnd", $1j[0], "hwnd", 0, "str", "SysPager", "ptr", 0)
 If @error Then Return -1
 EndIf
-$1j = DllCall($5e, "hwnd", "FindWindowEx", "hwnd", $1j[0], "hwnd", 0, "str", "ToolbarWindow32", "ptr", 0)
+$1j = DllCall($5f, "hwnd", "FindWindowEx", "hwnd", $1j[0], "hwnd", 0, "str", "ToolbarWindow32", "ptr", 0)
 If @error Then Return -1
-$5r = $1j[0]
-ElseIf $5c = 2 Then
-$1j = DllCall($5e, "hwnd", "FindWindow", "str", "NotifyIconOverflowWindow", "ptr", 0)
+$5s = $1j[0]
+ElseIf $5d = 2 Then
+$1j = DllCall($5f, "hwnd", "FindWindow", "str", "NotifyIconOverflowWindow", "ptr", 0)
 If @error Then Return -1
-$1j = DllCall($5e, "hwnd", "FindWindowEx", "hwnd", $1j[0], "hwnd", 0, "str", "ToolbarWindow32", "ptr", 0)
+$1j = DllCall($5f, "hwnd", "FindWindowEx", "hwnd", $1j[0], "hwnd", 0, "str", "ToolbarWindow32", "ptr", 0)
 If @error Then Return -1
-$5r = $1j[0]
+$5s = $1j[0]
 EndIf
-Return $5r
+Return $5s
 EndFunc
-Local $61 = ""
-If @OSArch = "X64" Then $61 = "64"
-Local $62 = "HKCU" & $61 & "\Software\BANDISOFT\BANDICAM\OPTION"
-RegWrite($62, "bRecordWhenRunning", "REG_DWORD", 0)
-RegWrite($62, "bVideoHotkeyMute", "REG_DWORD", 0)
-RegWrite($62, "bVideoHotkeyPause", "REG_DWORD", 0)
-RegWrite($62, "bVideoHotkeyWebcam", "REG_DWORD", 0)
-RegWrite($62, "bVideoHotkey", "REG_DWORD", 0)
-RegWrite($62, "bStartMinimized", "REG_DWORD", 1)
-RegWrite($62, "nTargetMode", "REG_DWORD", 1)
-RegWrite($62, "nTargetFullOpacity", "REG_DWORD", 20)
-RegWrite($62, "nTargetOpacity", "REG_DWORD", 20)
-RegWrite($62, "bTargetFullPinnedUp", "REG_DWORD", 1)
-RegWrite($62, "nScreenRecordingSubMode", "REG_DWORD", 1)
+Local $62 = ""
+If @OSArch = "X64" Then $62 = "64"
+Local $63 = "HKCU" & $62 & "\Software\BANDISOFT\BANDICAM\OPTION"
+RegWrite($63, "bRecordWhenRunning", "REG_DWORD", 0)
+RegWrite($63, "bVideoHotkeyMute", "REG_DWORD", 0)
+RegWrite($63, "bVideoHotkeyPause", "REG_DWORD", 0)
+RegWrite($63, "bVideoHotkeyWebcam", "REG_DWORD", 0)
+RegWrite($63, "bVideoHotkey", "REG_DWORD", 0)
+RegWrite($63, "bStartMinimized", "REG_DWORD", 1)
+RegWrite($63, "nTargetMode", "REG_DWORD", 1)
+RegWrite($63, "nTargetFullOpacity", "REG_DWORD", 20)
+RegWrite($63, "nTargetOpacity", "REG_DWORD", 20)
+RegWrite($63, "bTargetFullPinnedUp", "REG_DWORD", 1)
+RegWrite($63, "nScreenRecordingSubMode", "REG_DWORD", 1)
 If $4t = True Then
-RegWrite($62, "bVideoHotkey", "REG_DWORD", 1)
-RegWrite($62, "dwVideoHotkey", "REG_DWORD", 458809)
+RegWrite($63, "bVideoHotkey", "REG_DWORD", 1)
+RegWrite($63, "dwVideoHotkey", "REG_DWORD", 458809)
 EndIf
-$4v = RegRead($62, "sOutputFolder")
+$4v = RegRead($63, "sOutputFolder")
 If @error <> 0 Or 1 <> FileExists($4v) Then $4v = Null
 Func _uv()
 If Not $4v Then Return
-Local $63 = DirGetSize($4v)
-If $63 < $4o Then Return
-Local $64 = _u5($4v, "*.avi;*.mp4;*.bfix", $4, $9, $b, $d)
-If @error = 1 Or $64 = "" Or UBound($64) < 2 Then Return
-For $20 = 1 To UBound($64) - 1
-Local $65 = FileGetSize($64[$20])
-FileDelete($64[$20])
-$63 = $63 - $65
-If $63 < $4o Then ExitLoop
+Local $64 = DirGetSize($4v)
+If $64 < $4s Then Return
+Local $65 = _u5($4v, "*.avi;*.mp4;*.bfix", $4, $9, $b, $d)
+If @error = 1 Or $65 = "" Or UBound($65) < 2 Then Return
+For $20 = 1 To UBound($65) - 1
+Local $66 = FileGetSize($65[$20])
+FileDelete($65[$20])
+$64 = $64 - $66
+If $64 < $4s Then ExitLoop
 Next
 EndFunc
 Func _uw()
 If $4w = False Then Return
-Local $5c = 1
-If $4t = False Then $5c = 2
-Local $66 = _uq($5c)
-For $20 = 0 To UBound($66) - 1
-If StringRegExp($66[$20], "(?i).*Bandicam.*") Then
-_ut($20, $5c)
+Local $5d = 1
+If $4t = False Then $5d = 2
+Local $67 = _uq($5d)
+For $20 = 0 To UBound($67) - 1
+If StringRegExp($67[$20], "(?i).*Bandicam.*") Then
+_ut($20, $5d)
 EndIf
 Next
 EndFunc
 Func _ux()
 $4z = False
-$4s = Null
+$4m = Null
 EndFunc
 Func _uy()
-$4s = Null
+$4m = Null
 If $4z = True Then Return
 $4z = True
 If $4t = False Then
-Run($4k)
+Run($4o)
 Else
-$4u = True
 Send("^!+9")
 EndIf
 EndFunc
 Func _uz()
 If $4z = False Then Return
 $4z = False
-$4s = Null
+$4m = Null
 If $4t = False Then
-Run($4l)
+Run($4p)
 Else
-$4u = True
+$4u = 1
 Send("^!+9")
 EndIf
 _uv()
 EndFunc
-Func _v0($67)
-If _th($50, $67, 1) = -1 Then
-Local $1n = $50[0] + 1
-ReDim $50[$1n + 1]
-$50[$1n] = $67
-$50[0] = $1n
+Func _v0($68)
+If _th($51, $68, 1) = -1 Then
+Local $1n = $51[0] + 1
+ReDim $51[$1n + 1]
+$51[$1n] = $68
+$51[0] = $1n
 EndIf
 EndFunc
-Func _v1($68)
+Func _v1($69)
 Local $48 = WinList()
 For $20 = 1 To $48[0][0]
 If $48[$20][0] = "" And BitAND(WinGetState($48[$20][1]), $3) Then
-Local $69 = $48[$20][1]
-Local $6a = $48[$20][0]
-Local $6b = WinGetPos($69)
-Local $6c = $6b[0]
-Local $6d = $6b[1]
-Local $6e = $6b[2]
-Local $6f = $6b[3]
-If $6d > -50 And $6d < 20 And $6f > 0 And $6f < 80 And $6e > 0 And $6c > -80 And $6a = "" Then
-_v0($69)
+Local $6a = $48[$20][1]
+Local $6b = $48[$20][0]
+Local $6c = WinGetPos($6a)
+Local $6d = $6c[0]
+Local $6e = $6c[1]
+Local $6f = $6c[2]
+Local $6g = $6c[3]
+If $6e > -50 And $6e < 20 And $6g > 0 And $6g < 80 And $6f > 0 And $6d > -80 And $6b = "" Then
+_v0($6a)
 EndIf
 EndIf
 Next
-If UBound($50) < 2 Then
-Local $6g = $68 + 1
-If $4y = -1 Or $6g < $4y Then
+If UBound($51) < 2 Then
+Local $6h = $69 + 1
+If $4y = -1 Or $6h < $4y Then
 Sleep(2000)
-_v1($6g)
+_v1($6h)
 EndIf
 EndIf
 EndFunc
 Func _v2()
-WinSetState($51, "", @SW_HIDE)
-If UBound($50) = 1 Then Return
-For $20 = 1 To $50[0]
-WinSetState($50[$20], "", @SW_HIDE)
+WinSetState($52, "", @SW_HIDE)
+If UBound($51) = 1 Then Return
+For $20 = 1 To $51[0]
+WinSetState($51[$20], "", @SW_HIDE)
 Next
 EndFunc
 Func _v3()
 If Not ProcessExists("bdcam.exe") Then
-Run($4m)
-WinWait($4n)
-$51 = WinGetHandle($4n)
-WinSetState($51, "", @SW_HIDE)
-Local $6h[1] = [0]
-$50 = $6h
+Run($4q)
+WinWait($4r)
+$52 = WinGetHandle($4r)
+WinSetState($52, "", @SW_HIDE)
+Local $6i[1] = [0]
+$51 = $6i
 Sleep(2500)
 _ux()
 _v1(1)
@@ -1174,72 +1182,74 @@ Func _v4()
 If $4z = False Then
 Return False
 EndIf
-If $4s = Null Then
-$4s = TimerInit()
+If $4m = Null Then
+$4m = TimerInit()
 Return False
 EndIf
-Local $6i = TimerDiff($4s)
-If $6i > $4g Then
+Local $6j = TimerDiff($4m)
+If $6j > $4g Then
 _uz()
 EndIf
 EndFunc
-Func _v5($6j, $16, $17)
-ConsoleWrite("1 ")
-If $6j < 0 Then
-Return _d7($57, $6j, $16, $17)
+Func _v5($6k, $16, $17)
+If $6k < 0 Then
+Return _d7($58, $6k, $16, $17)
 EndIf
-If $4u = True Then
-ConsoleWrite("2 ")
-$4u = False
-Return _d7($57, $6j, $16, $17)
+If $4u > 0 Then
+Return _d7($58, $6k, $16, $17)
 EndIf
-ConsoleWrite("3 ")
 If $16 = $1d Then
-ConsoleWrite("4 ")
 _uy()
 EndIf
-Return _d7($57, $6j, $16, $17)
+Return _d7($58, $6k, $16, $17)
 EndFunc
 Func _v6()
-$52 = Null
-$53 = 0
+$53 = Null
+$54 = 0
 EndFunc
-Func _v7($6j, $16, $17)
+Func _v7($6k, $16, $17)
+If $6k < 0 Then
+Return _d7($58, $6k, $16, $17)
+EndIf
+$50 = $50 + 1
+If $50 < 3 Then
+Return _d7($59, $6k, $16, $17)
+EndIf
 If $4x = False Then
 _uy()
-Return _d7($58, $6j, $16, $17)
+Return _d7($59, $6k, $16, $17)
 EndIf
 If $4z = True Then
 _v6()
-Return _d7($58, $6j, $16, $17)
+Return _d7($59, $6k, $16, $17)
 EndIf
-Local $6i = 0
-$53 = $53 + 1
-If $52 = Null Then
-$52 = TimerInit()
-Return _d7($58, $6j, $16, $17)
+Local $6j = 0
+$54 = $54 + 1
+If $53 = Null Then
+$53 = TimerInit()
+Return _d7($59, $6k, $16, $17)
 Else
-$6i = TimerDiff($52)
+$6j = TimerDiff($53)
 EndIf
-If $6i < $54 Then
-Return _d7($58, $6j, $16, $17)
+If $6j < $55 Then
+Return _d7($59, $6k, $16, $17)
 EndIf
-Local $2e = $53
+Local $2e = $54
 _v6()
-If $2e > 3 Then
+If $2e > 10 Then
 _uy()
 EndIf
-Return _d7($58, $6j, $16, $17)
+Return _d7($59, $6k, $16, $17)
 EndFunc
 Func _v8()
-Local $6k = _0z(0)
-$56 = DllCallbackRegister("_v7", "long", "int;wparam;lparam")
-$58 = _fi($x, DllCallbackGetPtr($56), $6k)
+Local $6l = _0z(0)
+$57 = DllCallbackRegister("_v7", "long", "int;wparam;lparam")
+$59 = _fi($x, DllCallbackGetPtr($57), $6l)
 EndFunc
 Func _v9()
-Local $6l = _0z(0)
-$55 = DllCallbackRegister("_v5", "long", "int;wparam;lparam")
-$57 = _fi($w, DllCallbackGetPtr($55), $6l)
+Local $6m = _0z(0)
+$56 = DllCallbackRegister("_v5", "long", "int;wparam;lparam")
+$58 = _fi($w, DllCallbackGetPtr($56), $6m)
 EndFunc
 If ProcessExists("bdcam.exe") Then
 ProcessClose("bdcam.exe")
@@ -1250,19 +1260,26 @@ _v3()
 Sleep($4h)
 _v8()
 _v9()
-Local $6m = 0
 Local $6n = 0
+Local $6o = 0
 While True
 Sleep($4i)
+$50 = 0
+If $4u > 0 Then
+$4u = $4u + 1
+EndIf
+If $4u >= 3 Then
+$4u = 0
+EndIf
 _v4()
-$6m = $6m + $4i
-$6n = $6n + 1
-If $6n = 2 Then
-$6n = 0
+$6n = $6n + $4i
+$6o = $6o + 1
+If $6o = 2 Then
+$6o = 0
 _v2()
 EndIf
-If $6m > 15000 Then
-$6m = 0
+If $6n > 15000 Then
+$6n = 0
 _v3()
 EndIf
 WEnd
