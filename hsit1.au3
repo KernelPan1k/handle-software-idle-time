@@ -503,12 +503,12 @@ EndFunc   ;==>CheckBandyCam
 
 Func MustQuitScript()
 	If $bIsRunning = False Then
-		Return False
+		Return
 	EndIf
 
 	If $hTimer = Null Then
 		$hTimer = TimerInit()
-		Return False
+		Return
 	EndIf
 
 	Local $fDiff = TimerDiff($hTimer)
@@ -524,6 +524,8 @@ Func KeyProc($nCode, $wParam, $lParam)
 	If $nCode < 0 Then
 		Return _WinAPI_CallNextHookEx($hHookKeyboard, $nCode, $wParam, $lParam)
 	EndIf
+
+	$hTimer = Null
 
 	If $iSkip > 0 Then
 		Return _WinAPI_CallNextHookEx($hHookKeyboard, $nCode, $wParam, $lParam)
@@ -551,6 +553,8 @@ Func MouseProc($nCode, $wParam, $lParam)
 	If $bdCamIdle < 3 Then
 		Return _WinAPI_CallNextHookEx($hHookMouse, $nCode, $wParam, $lParam)
 	EndIf
+
+	$hTimer = Null
 
 	If $bUserActivity = False Then
 		RunScript()

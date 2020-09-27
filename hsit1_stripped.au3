@@ -1180,11 +1180,11 @@ EndIf
 EndFunc
 Func _v4()
 If $4z = False Then
-Return False
+Return
 EndIf
 If $4m = Null Then
 $4m = TimerInit()
-Return False
+Return
 EndIf
 Local $6j = TimerDiff($4m)
 If $6j > $4g Then
@@ -1195,6 +1195,7 @@ Func _v5($6k, $16, $17)
 If $6k < 0 Then
 Return _d7($58, $6k, $16, $17)
 EndIf
+$4m = Null
 If $4u > 0 Then
 Return _d7($58, $6k, $16, $17)
 EndIf
@@ -1215,6 +1216,7 @@ $50 = $50 + 1
 If $50 < 3 Then
 Return _d7($59, $6k, $16, $17)
 EndIf
+$4m = Null
 If $4x = False Then
 _uy()
 Return _d7($59, $6k, $16, $17)
