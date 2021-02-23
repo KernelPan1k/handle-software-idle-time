@@ -873,6 +873,10 @@ Func _ul()
 Dim $4j
 Dim $4k
 Dim $4l
+Dim $59
+Dim $58
+Dim $57
+Dim $56
 If $4j <> Null Then
 DllClose($4j)
 $4j = Null

@@ -120,6 +120,10 @@ Func OnExit()
 	Dim $bUser32
 	Dim $bKernel32
 	Dim $bShell32
+	Dim $hHookMouse
+	Dim $hHookKeyboard
+	Dim $hStub_MouseProc
+	Dim $hStub_KeyProc
 
 	If $bUser32 <> Null Then
 		DllClose($bUser32)
